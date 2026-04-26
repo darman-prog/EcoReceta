@@ -8,3 +8,5 @@ ademas tenemos que agregar correciones a algunos apartados
 visuales para mejor visualizacion mejorar colores y agregar
 iconos tambien debemos manejar el tema de las imagenes
 en el home screen*
+
+*by Diego Meza.*
