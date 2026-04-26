@@ -1,7 +1,5 @@
 package eco.receta.app.features.auth
 
-
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -31,12 +29,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import eco.receta.app.core.components.AuthTextField
 import eco.receta.app.ui.theme.EcoRecetaTheme
 
-// ─── Colores (misma paleta que LoginScreen) ──────────────────────────────────
+// ─── Sistema de Diseño (Consistencia con Login) ──────────────────────────────
 private val ColorPrimary   = Color(0xFFD94F3D)
 private val ColorGold      = Color(0xFFC8922A)
 private val ColorBodyText  = Color(0xFF3D3D3D)
-private val ColorCardBg    = Color(0xFFFAFAFA)
-private val ColorLabelText = Color(0xFF8A8A8A)
+private val ColorCardBg    = Color(0xFFFFFFFF)
+private val ColorLabelText = Color(0xFF555555) // Mejora de Accesibilidad
 
 @Composable
 fun RegisterScreen(
@@ -76,73 +74,55 @@ fun RegisterContent(
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // ════════════════════════════════════════════════════════════════════
-        // TODO: COLOCA TU IMAGEN DE FONDO AQUÍ (R.drawable.tu_imagen)
-        // ════════════════════════════════════════════════════════════════════
+        // ── ColoresBanderaColombia ────────────────────────────────────────
         Column(modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.fillMaxWidth().weight(0.45f).background(Color(0xFFF5C400)))
             Box(modifier = Modifier.fillMaxWidth().weight(0.30f).background(Color(0xFF003087)))
             Box(modifier = Modifier.fillMaxWidth().weight(0.25f).background(Color(0xFFCE1126)))
         }
+        Box(modifier = Modifier.fillMaxSize().background(Color.White.copy(alpha = 0.1f)))
 
         Column(
-            modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Spacer(modifier = Modifier.height(48.dp))
-
-            // ── Encabezado sobre la tarjeta ─────────────────────────────────
-            Text(
-                text = "EcoReceta",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF1A1A1A)
-            )
-            Text(
-                text = "El sabor de nuestra tierra en tu cocina.",
-                fontSize = 13.sp,
-                color = ColorBodyText
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // ── Tarjeta ────────────────────────────────────────────────────
+            // ── Tarjeta de Registro (Affordance) ─────────────────────────────
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp)
-                    .clip(RoundedCornerShape(28.dp))
+                    .clip(RoundedCornerShape(32.dp))
                     .background(ColorCardBg)
-                    .padding(horizontal = 28.dp, vertical = 32.dp)
+                    .padding(horizontal = 28.dp, vertical = 36.dp)
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                // Título con estilo
                 Text(
                     text = buildAnnotatedString {
-                        withStyle(SpanStyle(color = ColorGold, fontWeight = FontWeight.Bold)) {
-                            append("Únete")
+                        append("Eco")
+                        withStyle(SpanStyle(color = ColorGold, fontWeight = FontWeight.ExtraBold)) {
+                            append("Receta")
                         }
-                        append(" a EcoReceta")
                     },
-                    fontSize = 26.sp,
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF1A1A1A)
                 )
 
-                Spacer(modifier = Modifier.height(6.dp))
-
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Crea tu cuenta para guardar tus recetas favoritas.",
+                    text = "Únete a la comunidad más grande de amantes de la cocina colombiana.",
                     fontSize = 14.sp,
                     color = ColorBodyText,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp
                 )
 
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
-                // ── Campo: Nombre ───────────────────────────────────────────
+                // ── Campos de Entrada de datos (Consistencia) ─────────────────────────
                 AuthTextField(
                     label = "NOMBRE COMPLETO",
                     value = state.fullName,
@@ -154,7 +134,6 @@ fun RegisterContent(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // ── Campo: Correo ───────────────────────────────────────────
                 AuthTextField(
                     label = "CORREO ELECTRÓNICO",
                     value = state.email,
@@ -167,12 +146,11 @@ fun RegisterContent(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // ── Campo: Contraseña ───────────────────────────────────────
                 AuthTextField(
                     label = "CONTRASEÑA",
                     value = state.password,
                     onValueChange = onPasswordChange,
-                    placeholder = "••••••••",
+                    placeholder = "Mínimo 6 caracteres",
                     leadingIcon = { Icon(Icons.Default.Lock, null, tint = ColorLabelText) },
                     keyboardType = KeyboardType.Password,
                     visualTransformation = PasswordVisualTransformation(),
@@ -181,64 +159,56 @@ fun RegisterContent(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // ── Campo: Confirmar contraseña ─────────────────────────────
                 AuthTextField(
                     label = "CONFIRMAR CONTRASEÑA",
                     value = state.confirmPassword,
                     onValueChange = onConfirmPasswordChange,
-                    placeholder = "••••••••",
+                    placeholder = "Repite tu contraseña",
                     leadingIcon = { Icon(Icons.Default.Lock, null, tint = ColorLabelText) },
                     keyboardType = KeyboardType.Password,
                     visualTransformation = PasswordVisualTransformation(),
                     errorMessage = state.confirmPasswordError
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // ── Error Firebase ──────────────────────────────────────────
                 state.authError?.let { error ->
                     Text(
                         text = error,
                         color = MaterialTheme.colorScheme.error,
                         fontSize = 13.sp,
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        modifier = Modifier.padding(vertical = 8.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // ── Botón principal ─────────────────────────────────────────
                 Button(
                     onClick = onRegisterClick,
                     enabled = !state.isLoading,
-                    modifier = Modifier.fillMaxWidth().height(54.dp).padding(top = 8.dp),
-                    shape = RoundedCornerShape(50),
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = ColorPrimary)
                 ) {
                     if (state.isLoading) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
                     } else {
-                        Text("Unirme a la Despensa →", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                        Text("Unirme ahora →", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // ── Enlace a login ──────────────────────────────────────────
-                Row {
-                    Text("¿Ya tienes una cuenta? ", color = ColorBodyText, fontSize = 14.sp, modifier = Modifier.padding(top = 12.dp))
-                    TextButton(
-                        onClick = onNavigateToLogin,
-                        contentPadding = PaddingValues(0.dp)
-                    ) {
-                        Text("Inicia sesión aquí", color = ColorGold, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("¿Ya eres parte? ", color = ColorBodyText, fontSize = 14.sp)
+                    TextButton(onClick = onNavigateToLogin, contentPadding = PaddingValues(0.dp)) {
+                        Text("Inicia sesión", color = ColorGold, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
                     }
                 }
             }
         }
     }
 }
-
 
 @Preview(showBackground = true, device = "spec:width=411dp,height=891dp")
 @Composable

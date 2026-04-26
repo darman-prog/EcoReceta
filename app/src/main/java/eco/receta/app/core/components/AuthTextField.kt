@@ -17,7 +17,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val ColorFieldBg   = Color(0x4DD1C5AC)
+private val ColorFieldBg   = Color(0x65D1C5AC)
 private val ColorLabelText = Color(0xFF8A8A8A)
 
 @Composable

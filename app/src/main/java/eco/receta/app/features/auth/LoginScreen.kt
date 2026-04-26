@@ -1,6 +1,7 @@
 package eco.receta.app.features.auth
 
-
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -13,30 +14,36 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import eco.receta.app.R
 import eco.receta.app.core.components.AuthTextField
 import eco.receta.app.ui.theme.EcoRecetaTheme
 
-// ─── Colores extraídos del diseño ───────────────────────────────────────────
-private val ColorPrimary      = Color(0xFFD94F3D) // Rojo botón principal
-private val ColorGold         = Color(0xFFC8922A) // Amarillo dorado – links
-private val ColorNavy         = Color(0xFF1B3A6B) // Azul oscuro – botones sociales
-private val ColorFieldBg      = Color(0xFFF5F0F0) // Fondo de campos
-private val ColorLabelText    = Color(0xFF8A8A8A) // Labels de campos
-private val ColorBodyText     = Color(0xFF3D3D3D) // Texto secundario
-private val ColorCardBg       = Color(0xFFFAFAFA) // Fondo tarjeta
+// ─── Sistema de Diseño (UI Kit) ───────────────────────────────────────────
+private val ColorPrimary      = Color(0xFFD94F3D) // CTA Principal
+private val ColorGold         = Color(0xFFC8922A) // Énfasis secundario
+private val ColorSocialBg     = Color(0xE2FFFDFD)
+private val ColorLabelText    = Color(0xFF555555) // Accesibilidad: Contraste WCAG
+private val ColorBodyText     = Color(0xFF3D3D3D)
+private val ColorCardBg       = Color(0xFFFFFFFF)
 
 @Composable
 fun LoginScreen(
@@ -46,7 +53,6 @@ fun LoginScreen(
 ) {
     val state by viewModel.loginState.collectAsState()
 
-    // Navegar cuando el login es exitoso
     LaunchedEffect(state.isSuccess) {
         if (state.isSuccess) {
             viewModel.clearLoginSuccess()
@@ -75,63 +81,67 @@ fun LoginContent(
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // ════════════════════════════════════════════════════════════════════
-        // TODO: COLOCA TU IMAGEN DE FONDO AQUÍ (R.drawable.tu_imagen)
-        // ════════════════════════════════════════════════════════════════════
         Column(modifier = Modifier.fillMaxSize()) {
-            Box(modifier = Modifier.fillMaxWidth().weight(0.45f).background(Color(0xFFF5C400)))
+            Box(modifier = Modifier.fillMaxWidth().weight(0.45f).background(Color(0xCEF5C400)))
             Box(modifier = Modifier.fillMaxWidth().weight(0.30f).background(Color(0xFF003087)))
             Box(modifier = Modifier.fillMaxWidth().weight(0.25f).background(Color(0xFFCE1126)))
         }
+        Box(modifier = Modifier.fillMaxSize().background(Color.White.copy(alpha = 0.05f)))
 
-        // ── Tarjeta central ─────────────────────────────────────────────────
+        // ── Tarjeta de Login ─────────────────────────────────────────────────
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
                 .align(Alignment.Center)
-                .clip(RoundedCornerShape(28.dp))
+                .clip(RoundedCornerShape(32.dp))
                 .background(ColorCardBg)
-                .padding(horizontal = 28.dp, vertical = 32.dp)
+                .padding(horizontal = 28.dp, vertical = 40.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            // Título
             Text(
-                text = "¡Bienvenido de vuelta!",
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold,
+                text = "¡Bienvenido!",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.ExtraBold,
                 color = Color(0xFF1A1A1A),
-                textAlign = TextAlign.Center,
-                lineHeight = 32.sp
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Ingresa a tu despensa de recetas y descubre el sabor de Colombia.",
-                fontSize = 14.sp,
-                color = ColorBodyText,
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // ── Campo: Correo ───────────────────────────────────────────────
+            Text(
+                text = buildAnnotatedString {
+                    append("Descubre el sabor de Colombia en cada receta con ")
+                    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                        append("Eco")
+                        withStyle(SpanStyle(color = ColorGold)) {
+                            append("Receta")
+                        }
+                    }
+                    append(".")
+                },
+                fontSize = 15.sp,
+                color = ColorBodyText,
+                textAlign = TextAlign.Center,
+                lineHeight = 22.sp
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
             AuthTextField(
                 label = "CORREO ELECTRÓNICO",
                 value = state.email,
                 onValueChange = onEmailChange,
-                placeholder = "ejemplo@colombia.com",
+                placeholder = "ejemplo@eco.com",
                 leadingIcon = { Icon(Icons.Default.Email, null, tint = ColorLabelText) },
                 keyboardType = KeyboardType.Email,
                 errorMessage = state.emailError
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // ── Campo: Contraseña ───────────────────────────────────────────
             AuthTextField(
                 label = "CONTRASEÑA",
                 value = state.password,
@@ -139,13 +149,11 @@ fun LoginContent(
                 placeholder = "••••••••",
                 leadingIcon = { Icon(Icons.Default.Lock, null, tint = ColorLabelText) },
                 keyboardType = KeyboardType.Password,
-                visualTransformation = if (passwordVisible) VisualTransformation.None
-                else PasswordVisualTransformation(),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
-                            imageVector = if (passwordVisible) Icons.Default.VisibilityOff
-                            else Icons.Default.Visibility,
+                            imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                             contentDescription = null,
                             tint = ColorLabelText
                         )
@@ -154,88 +162,112 @@ fun LoginContent(
                 errorMessage = state.passwordError
             )
 
-            // Olvidé contraseña
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                TextButton(onClick = { /* TODO: recuperar contraseña */ }) {
-                    Text("¿Olvidaste tu contraseña?", color = ColorGold, fontSize = 13.sp)
+                TextButton(onClick = { }) {
+                    Text("¿Olvidaste tu contraseña?", color = ColorGold, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
-            // ── Error Firebase ──────────────────────────────────────────────
+            Spacer(modifier = Modifier.height(8.dp))
+
             state.authError?.let { error ->
                 Text(
                     text = error,
                     color = MaterialTheme.colorScheme.error,
                     fontSize = 13.sp,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 12.dp)
                 )
             }
 
-            // ── Botón principal ─────────────────────────────────────────────
             Button(
                 onClick = onLoginClick,
                 enabled = !state.isLoading,
-                modifier = Modifier.fillMaxWidth().height(54.dp),
-                shape = RoundedCornerShape(50),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = ColorPrimary)
             ) {
                 if (state.isLoading) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
                 } else {
-                    Text("Ingresar →", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // ── Separador ──────────────────────────────────────────────────
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Divider(modifier = Modifier.weight(1f), color = Color(0xFFE0E0E0))
-                Text("  O continúa con  ", color = ColorLabelText, fontSize = 12.sp)
-                Divider(modifier = Modifier.weight(1f), color = Color(0xFFE0E0E0))
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // ── Botones sociales ───────────────────────────────────────────
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                SocialButton(label = "Google", modifier = Modifier.weight(1f)) {
-                    // TODO: Google Sign-In
-                }
-                SocialButton(label = "iOS", modifier = Modifier.weight(1f)) {
-                    // TODO: Apple Sign-In
+                    Text("Ingresar ahora", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // ── Enlace a registro ──────────────────────────────────────────
-            Row {
-                Text("¿Nuevo en la Despensa? ", color = ColorBodyText, fontSize = 14.sp, modifier = Modifier.padding(top = 12.dp))
-                TextButton(
-                    onClick = onNavigateToRegister,
-                    contentPadding = PaddingValues(0.dp)
-                ) {
-                    Text("Crea una cuenta", color = ColorGold, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Divider(modifier = Modifier.weight(1f), color = Color(0xFF939090))
+                Text("  o usa  ", color = ColorLabelText, fontSize = 12.sp)
+                Divider(modifier = Modifier.weight(1f), color = Color(0xFF939090))
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                SocialButton(
+                    label = "Google",
+                    modifier = Modifier.weight(1f),
+                    icon = {
+                        Image(
+                            painter = painterResource(id = R.drawable.google),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                ) { }
+
+                SocialButton(
+                    label = "Apple",
+                    modifier = Modifier.weight(1f),
+                    icon = {
+                        Image(
+                            painter = painterResource(id = R.drawable.apple),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                ) { }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("¿No tienes cuenta? ", color = ColorBodyText, fontSize = 14.sp)
+                TextButton(onClick = onNavigateToRegister, contentPadding = PaddingValues(0.dp)) {
+                    Text("Regístrate aquí", color = ColorGold, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
                 }
             }
         }
     }
 }
 
-// ─── Botón social reutilizable ──────────────────────────────────────────────
 @Composable
-private fun SocialButton(label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun SocialButton(
+    label: String,
+    modifier: Modifier = Modifier,
+    icon: @Composable () -> Unit,
+    onClick: () -> Unit
+) {
+    // Cambio a estilo con color suave para mantener jerarquía visual
     Button(
         onClick = onClick,
-        modifier = modifier.height(48.dp),
-        shape = RoundedCornerShape(50),
-        colors = ButtonDefaults.buttonColors(containerColor = ColorNavy)
+        modifier = modifier.height(52.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = ColorSocialBg,
+            contentColor = Color.Black
+        ),
+        border = BorderStroke(2.dp, Color(0xFFE0E0E0)),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 1.dp)
     ) {
-        Text(label, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            icon()
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(label, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        }
     }
 }
 
@@ -244,10 +276,7 @@ private fun SocialButton(label: String, modifier: Modifier = Modifier, onClick: 
 fun LoginScreenPreview() {
     EcoRecetaTheme {
         LoginContent(
-            state = LoginUiState(
-                email = "chef@ecoreceta.com",
-                password = "password123"
-            ),
+            state = LoginUiState(email = "chef@ecoreceta.com"),
             onEmailChange = {},
             onPasswordChange = {},
             onLoginClick = {},
