@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "214228209102",
+    "project_id": "ecoreceta",
+    "storage_bucket": "ecoreceta.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:214228209102:android:d204e53696b66bc2132f9f",
+        "android_client_info": {
+          "package_name": "eco.receta.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDia2L71ci53s5HL8mf26iXYtTuPtBS-0U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
