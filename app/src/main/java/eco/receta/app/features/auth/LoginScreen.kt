@@ -14,13 +14,13 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -37,6 +37,7 @@ import eco.receta.app.R
 import eco.receta.app.core.components.AuthTextField
 import eco.receta.app.ui.theme.EcoRecetaTheme
 
+
 // ─── Sistema de Diseño (UI Kit) ───────────────────────────────────────────
 private val ColorPrimary      = Color(0xFFD94F3D) // CTA Principal
 private val ColorGold         = Color(0xFFC8922A) // Énfasis secundario
@@ -52,6 +53,12 @@ fun LoginScreen(
     onNavigateToRegister: () -> Unit = {}
 ) {
     val state by viewModel.loginState.collectAsState()
+    //variables autenticacion de google
+    val contextGoogle = LocalContext.current
+    val webClientId = stringResource(R.string.default_web_client_id)
+    val viewModel: AuthViewModel = viewModel()
+    //variables autenticacion de google
+
 
     LaunchedEffect(state.isSuccess) {
         if (state.isSuccess) {
@@ -65,6 +72,9 @@ fun LoginScreen(
         onEmailChange = viewModel::onLoginEmailChange,
         onPasswordChange = viewModel::onLoginPasswordChange,
         onLoginClick = viewModel::login,
+        onGoogleClick = {
+            viewModel.signInWithGoogle(contextGoogle, webClientId)
+        },
         onNavigateToRegister = onNavigateToRegister
     )
 }
@@ -75,18 +85,30 @@ fun LoginContent(
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onLoginClick: () -> Unit,
-    onNavigateToRegister: () -> Unit
+    onNavigateToRegister: () -> Unit,
+    onGoogleClick: () -> Unit
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
         Column(modifier = Modifier.fillMaxSize()) {
-            Box(modifier = Modifier.fillMaxWidth().weight(0.45f).background(Color(0xCEF5C400)))
-            Box(modifier = Modifier.fillMaxWidth().weight(0.30f).background(Color(0xFF003087)))
-            Box(modifier = Modifier.fillMaxWidth().weight(0.25f).background(Color(0xFFCE1126)))
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.45f)
+                .background(Color(0xCEF5C400)))
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.30f)
+                .background(Color(0xFF003087)))
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.25f)
+                .background(Color(0xFFCE1126)))
         }
-        Box(modifier = Modifier.fillMaxSize().background(Color.White.copy(alpha = 0.05f)))
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White.copy(alpha = 0.05f)))
 
         // ── Tarjeta de Login ─────────────────────────────────────────────────
         Column(
@@ -182,7 +204,9 @@ fun LoginContent(
             Button(
                 onClick = onLoginClick,
                 enabled = !state.isLoading,
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = ColorPrimary)
             ) {
@@ -207,29 +231,27 @@ fun LoginContent(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
+                // ── Botón Google ─────────────────────────────────────────────
                 SocialButton(
-                    label = "Google",
+                    label = if (state.isGoogleLoading) "Cargando..." else "Google",
                     modifier = Modifier.weight(1f),
                     icon = {
-                        Image(
-                            painter = painterResource(id = R.drawable.google),
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                ) { }
-
-                SocialButton(
-                    label = "Apple",
-                    modifier = Modifier.weight(1f),
-                    icon = {
-                        Image(
-                            painter = painterResource(id = R.drawable.apple),
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                ) { }
+                        if (state.isGoogleLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = Color(0xFF4285F4)
+                            )
+                        } else {
+                            Image(
+                                painter = painterResource(id = R.drawable.google),
+                                contentDescription = "Google",
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    },
+                    onClick = onGoogleClick
+                )
             }
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -280,6 +302,7 @@ fun LoginScreenPreview() {
             onEmailChange = {},
             onPasswordChange = {},
             onLoginClick = {},
+            onGoogleClick = {},
             onNavigateToRegister = {}
         )
     }

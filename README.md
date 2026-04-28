@@ -23,3 +23,12 @@ o apple por ahora quedara en TODO se agregaron las imagenes en los iconos en la 
 drawable hay cambios de la feature 1 que todavia no se implementa como el homeScreen*
 
 *by Diego Meza.*
+
+# Feature 2.5
+28/04/2026
+
+*implementacion del boton de google a medias necesitamos reforzar logica y que nuestro boton
+nos rediriga a google para ver nuestras cuentas de google y asi poder probar si podemos iniciar sesion con una de nuestras cuentas de google
+por ahora no se avanzado en ninguna otra cosa*
+
+*by Diego Meza.*

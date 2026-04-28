@@ -12,6 +12,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import android.content.Context
+import eco.receta.app.features.auth.GoogleAuthHelper
+import eco.receta.app.features.auth.GoogleSignInResult
+
 
 // ---------- UI State ----------
 
@@ -22,6 +26,7 @@ data class LoginUiState(
     val passwordError: String? = null,
     val isLoading: Boolean = false,
     val authError: String? = null,
+    val isGoogleLoading: Boolean = false,
     val isSuccess: Boolean = false
 )
 
@@ -61,7 +66,6 @@ class AuthViewModel : ViewModel() {
         _loginState.update { it.copy(password = value, passwordError = null, authError = null) }
     }
 
-    // --- Register field updates ---
 
     fun onRegisterFullNameChange(value: String) {
         _registerState.update { it.copy(fullName = value, fullNameError = null) }
@@ -149,11 +153,37 @@ class AuthViewModel : ViewModel() {
                 }
             } catch (e: FirebaseAuthWeakPasswordException) {
                 _registerState.update {
-                    it.copy(isLoading = false, authError = "La contraseña es demasiado débil.")
+                    it.copy(isLoading = false, authError = "$e La contraseña es demasiado débil.")
                 }
             } catch (e: Exception) {
                 _registerState.update {
-                    it.copy(isLoading = false, authError = "Ocurrió un error. Intenta de nuevo.")
+                    it.copy(isLoading = false, authError = "$e Ocurrió un error. Intenta de nuevo.")
+                }
+            }
+        }
+    }
+
+    //Funcion control de google para la autenticacion
+    fun signInWithGoogle(context: Context, webClientId: String) {
+        viewModelScope.launch {
+            _loginState.update { it.copy(isGoogleLoading = true, authError = null) }
+
+            val helper = GoogleAuthHelper(context)
+
+            when (val result = helper.signIn(webClientId)) {
+                is GoogleSignInResult.Success -> {
+                    _loginState.update {
+                        it.copy(isGoogleLoading = false, isSuccess = true)
+                    }
+                }
+                is GoogleSignInResult.Error -> {
+                    _loginState.update {
+                        it.copy(isGoogleLoading = false, authError = result.message)
+                    }
+                }
+                is GoogleSignInResult.Cancelled -> {
+                    // El usuario cerró el selector — no mostramos error
+                    _loginState.update { it.copy(isGoogleLoading = false) }
                 }
             }
         }

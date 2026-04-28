@@ -12,7 +12,20 @@
           "package_name": "eco.receta.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "214228209102-q204sulr6aljf4e6at3a2iigh3p7rinf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "eco.receta.app",
+            "certificate_hash": "0d7ed2012f80ff52d58a0b9d2bf688ff553af424"
+          }
+        },
+        {
+          "client_id": "214228209102-avoa80pc006jgqlqvqbcu6bes908cg8i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDia2L71ci53s5HL8mf26iXYtTuPtBS-0U"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "214228209102-avoa80pc006jgqlqvqbcu6bes908cg8i.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
