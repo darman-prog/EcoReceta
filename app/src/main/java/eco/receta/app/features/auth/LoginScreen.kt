@@ -1,5 +1,8 @@
 package eco.receta.app.features.auth
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -53,12 +56,8 @@ fun LoginScreen(
     onNavigateToRegister: () -> Unit = {}
 ) {
     val state by viewModel.loginState.collectAsState()
-    //variables autenticacion de google
-    val contextGoogle = LocalContext.current
+    val context = LocalContext.current
     val webClientId = stringResource(R.string.default_web_client_id)
-    val viewModel: AuthViewModel = viewModel()
-    //variables autenticacion de google
-
 
     LaunchedEffect(state.isSuccess) {
         if (state.isSuccess) {
@@ -73,7 +72,12 @@ fun LoginScreen(
         onPasswordChange = viewModel::onLoginPasswordChange,
         onLoginClick = viewModel::login,
         onGoogleClick = {
-            viewModel.signInWithGoogle(contextGoogle, webClientId)
+            val activity = context.findActivity()
+            if (activity != null) {
+                viewModel.signInWithGoogle(activity, webClientId)
+            } else {
+                viewModel.signInWithGoogle(context, webClientId)
+            }
         },
         onNavigateToRegister = onNavigateToRegister
     )
@@ -197,7 +201,8 @@ fun LoginContent(
                     text = error,
                     color = MaterialTheme.colorScheme.error,
                     fontSize = 13.sp,
-                    modifier = Modifier.padding(bottom = 12.dp)
+                    modifier = Modifier.padding(bottom = 12.dp),
+                    textAlign = TextAlign.Center
                 )
             }
 
@@ -231,7 +236,6 @@ fun LoginContent(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // ── Botón Google ─────────────────────────────────────────────
                 SocialButton(
                     label = if (state.isGoogleLoading) "Cargando..." else "Google",
                     modifier = Modifier.weight(1f),
@@ -240,7 +244,7 @@ fun LoginContent(
                             CircularProgressIndicator(
                                 modifier = Modifier.size(18.dp),
                                 strokeWidth = 2.dp,
-                                color = Color(0xFF4285F4)
+                                color = ColorPrimary
                             )
                         } else {
                             Image(
@@ -291,6 +295,19 @@ private fun SocialButton(
             Text(label, fontWeight = FontWeight.Bold, fontSize = 14.sp)
         }
     }
+}
+
+/**
+ * Función de ayuda para obtener la Activity desde el Context.
+ * Indispensable para que CredentialManager pueda inflar su UI.
+ */
+fun Context.findActivity(): Activity? {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is Activity) return context
+        context = context.baseContext
+    }
+    return null
 }
 
 @Preview(showBackground = true, device = "spec:width=411dp,height=891dp")

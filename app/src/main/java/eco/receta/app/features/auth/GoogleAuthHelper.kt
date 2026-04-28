@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -69,9 +70,12 @@ class GoogleAuthHelper(private val context: Context) {
                 GoogleSignInResult.Error("Tipo de credencial no reconocido.")
             }
 
-        } catch (e: GetCredentialException) {
-            // El usuario cerró el selector sin elegir cuenta
+        } catch (e: GetCredentialCancellationException) {
+            // El usuario cerró el selector conscientemente
             GoogleSignInResult.Cancelled
+        } catch (e: GetCredentialException) {
+            // Error técnico de Credential Manager (ej: falta configuración SHA-1 o Play Services)
+            GoogleSignInResult.Error("Error de credenciales: ${e.message} (${e.javaClass.simpleName})")
         } catch (e: Exception) {
             GoogleSignInResult.Error(
                 e.message ?: "Error desconocido al iniciar sesión con Google."
