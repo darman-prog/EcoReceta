@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -19,9 +20,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -33,13 +36,13 @@ import com.google.firebase.auth.FirebaseAuth
 import eco.receta.app.data.model.Recipe
 
 // ─── Colores del Figma ───────────────────────────────────────────────────────
-private val ColorCream     = Color(0xFFFAF3EE)
+private val ColorCream     = Color(0xFFF6EFED)
 private val ColorDarkBrown = Color(0xFF2C1A0E)
 private val ColorRed       = Color(0xFFD94F3D)
 private val ColorGold      = Color(0xFFC8922A)
 private val ColorBodyText  = Color(0xFF5C4033)
 private val ColorFieldBg   = Color(0xFFEDE8DF)
-private val ColorCardBg    = Color(0xFFFFF8F2)
+private val ColorCardBg    = Color(0xFFF1E4DF)
 
 @Composable
 fun HomeScreen(
@@ -73,9 +76,9 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentPadding = PaddingValues(bottom = 24.dp)
+            contentPadding = PaddingValues(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp) // Espaciado consistente (Grid 8dp)
         ) {
-
             // ── TopBar con foto de perfil real ───────────────────────────
             item {
                 HomeTopBar(
@@ -89,13 +92,7 @@ fun HomeScreen(
             item {
                 Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
                     Text(
-                        text = "¿Qué hay en la",
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = ColorDarkBrown
-                    )
-                    Text(
-                        text = "despensa hoy?",
+                        text = "¿Qué cocinamos hoy?",
                         fontSize = 32.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = ColorDarkBrown
@@ -115,7 +112,7 @@ fun HomeScreen(
             // ── Sección: Recetas del Sistema ─────────────────────────────
             item {
                 SectionHeader(
-                    title   = "Explora Sabores Locales",
+                    title   = "Inspiración del Día",
                     onVerTodo = onNavigateToExplore
                 )
             }
@@ -214,14 +211,19 @@ private fun HomeTopBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
+            .background(Color(0xBFF8F4F4))
             .padding(horizontal = 20.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "EcoReceta",
-            fontSize = 20.sp,
+            text = buildAnnotatedString {
+                append("Eco")
+                withStyle(style = SpanStyle(color = ColorGold)) {
+                    append("Receta")
+                }
+            },
+            fontSize = 26.sp,
             fontWeight = FontWeight.Bold,
             color = ColorDarkBrown
         )
@@ -539,8 +541,8 @@ private fun LocalRecipeItem(
             SubcomposeAsyncImage(
                 model            = recipe.imageUrl,
                 contentDescription = recipe.nombre,
-                contentScale     = ContentScale.Crop,
-                modifier         = Modifier
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
                     .size(72.dp)
                     .clip(RoundedCornerShape(12.dp))
             ) {
@@ -592,7 +594,12 @@ private fun LocalRecipeItem(
                     .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
-                Text("+", fontSize = 20.sp, color = ColorGold)
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Agregar",
+                    tint = ColorGold,
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
     }
