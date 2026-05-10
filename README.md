@@ -32,3 +32,12 @@ nos rediriga a google para ver nuestras cuentas de google y asi poder probar si 
 por ahora no se avanzado en ninguna otra cosa*
 
 *by Diego Meza.*
+
+
+# Feature 3
+28/04/2026
+
+*Implementacion de inicio de sesion con google exitosamente
+completado ahora toca sacar datos de la api y empezar a armar el home y los demas screen*
+
+*by Diego Meza.*

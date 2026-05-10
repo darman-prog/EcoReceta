@@ -16,8 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -143,14 +146,6 @@ fun HomeContent(
                         fontWeight = FontWeight.Bold,
                         color = ColorDarkBrown
                     )
-                    TextButton(onClick = onNavigateToExplore) {
-                        Text(
-                            text = "Ver todo",
-                            color = ColorGold,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp
-                        )
-                    }
                 }
             }
 
@@ -178,12 +173,16 @@ private fun HomeTopBar() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "EcoReceta",
+            text = buildAnnotatedString {
+                append("Eco")
+                withStyle(SpanStyle(color = ColorGold, fontWeight = FontWeight.ExtraBold)) {
+                    append("Receta")
+                }
+            },
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = ColorDarkBrown
         )
-        // Foto de perfil
         Box(
             modifier = Modifier
                 .size(38.dp)
@@ -214,7 +213,7 @@ private fun SearchBar(
         placeholder = {
             Text(
                 text = "Busca ingredientes o recetas...",
-                color = Color(0xE18A7D70),
+                color = Color(0xF28C7C6D),
                 fontSize = 14.sp
             )
         },
@@ -341,7 +340,7 @@ private fun LocalRecipeItem(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = ColorCardBg),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Row(
             modifier = Modifier
@@ -391,14 +390,14 @@ private fun LocalRecipeItem(
 
             Box(
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(38.dp)
                     .clip(CircleShape)
                     .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "+",
-                    fontSize = 20.sp,
+                    fontSize = 28.sp,
                     fontWeight = FontWeight.Light,
                     color = ColorGold
                 )
@@ -420,76 +419,54 @@ fun EcoBottomNavBar(
         containerColor = ColorDarkBrown,
         tonalElevation = 0.dp
     ) {
-        NavigationBarItem(
-            selected = currentRoute == "home",
-            onClick = onHomeClick,
-            icon = { Text("🏠", fontSize = 20.sp) },
-            label = {
-                Text(
-                    text = "INICIO",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            },
-            colors = NavigationBarItemDefaults.colors(
-                selectedTextColor = ColorGold,
-                unselectedTextColor = Color.White.copy(alpha = 0.5f),
-                indicatorColor = Color.Transparent
-            )
+        val navItems = listOf(
+            Triple("home", "🏠", "INICIO"),
+            Triple("explore", "🧭", "EXPLORAR"),
+            Triple("create", "🍴", "CREAR"),
+            Triple("profile", "👤", "PERFIL")
         )
-        NavigationBarItem(
-            selected = currentRoute == "explore",
-            onClick = onExploreClick,
-            icon = { Text("🧭", fontSize = 20.sp) },
-            label = {
-                Text(
-                    text = "EXPLORAR",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold
+        val actions = listOf(onHomeClick, onExploreClick, onCreateClick, onProfileClick)
+
+        navItems.forEachIndexed { index, item ->
+            val isSelected = currentRoute == item.first
+            NavigationBarItem(
+                selected = isSelected,
+                onClick = actions[index],
+                icon = {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp)) // Border Radius personalizado
+                            .background(
+                                if (isSelected) Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color(0xFFD2B48C), // Marrón claro
+                                        Color(0xFF8B5E3C)  // Marrón medio
+                                    )
+                                ) else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent))
+                            )
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = item.second, fontSize = 20.sp)
+                    }
+                },
+                label = {
+                    Text(
+                        text = item.third,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedTextColor = ColorGold,
+                    unselectedTextColor = Color.White.copy(alpha = 0.5f),
+                    indicatorColor = Color.Transparent // Ocultamos el indicador por defecto
                 )
-            },
-            colors = NavigationBarItemDefaults.colors(
-                selectedTextColor = ColorGold,
-                unselectedTextColor = Color.White.copy(alpha = 0.5f),
-                indicatorColor = Color.Transparent
             )
-        )
-        NavigationBarItem(
-            selected = currentRoute == "create",
-            onClick = onCreateClick,
-            icon = { Text("🍴", fontSize = 20.sp) },
-            label = {
-                Text(
-                    text = "CREAR",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            },
-            colors = NavigationBarItemDefaults.colors(
-                selectedTextColor = ColorGold,
-                unselectedTextColor = Color.White.copy(alpha = 0.5f),
-                indicatorColor = Color.Transparent
-            )
-        )
-        NavigationBarItem(
-            selected = currentRoute == "profile",
-            onClick = onProfileClick,
-            icon = { Text("👤", fontSize = 20.sp) },
-            label = {
-                Text(
-                    text = "PERFIL",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            },
-            colors = NavigationBarItemDefaults.colors(
-                selectedTextColor = ColorGold,
-                unselectedTextColor = Color.White.copy(alpha = 0.5f),
-                indicatorColor = Color.Transparent
-            )
-        )
+        }
     }
 }
+
 
 // ─── Preview ─────────────────────────────────────────────────────────────────
 

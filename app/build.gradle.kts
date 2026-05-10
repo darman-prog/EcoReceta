@@ -55,12 +55,13 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(platform("com.google.firebase:firebase-bom:34.12.0"))
     implementation(libs.firebase.auth)
-
+    implementation("io.coil-kt:coil-compose:2.6.0")
     //autenticacion Google
     implementation("androidx.credentials:credentials:1.6.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.6.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.2.0")
     implementation(libs.androidx.ui)
+    implementation(libs.firebase.firestore)
     //autenticacion Google
 
     //implementaciones nuevas
