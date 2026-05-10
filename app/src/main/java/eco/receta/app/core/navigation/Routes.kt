@@ -7,5 +7,5 @@ object  Routes {
     const val EXPLORE       = "explore"
     const val CREATE        = "create"
     const val PROFILE       = "profile"
-    const val RECIPE_DETAIL = "recipe_detail/{recipeId}"
+    const val RECIPE_DETAIL = "recipe_detail"
 }

@@ -2,6 +2,8 @@
 
 package eco.receta.app.data.model
 
+import com.google.firebase.firestore.PropertyName
+
 data class Recipe(
     val id: String = "",
     val nombre: String = "",
@@ -28,5 +30,12 @@ data class Recipe(
     val creadoEn: Long = 0L
 )
 
-enum class TipoOrigen { SISTEMA, USUARIO }
-enum class Visibilidad { PUBLICA, PRIVADA }
+enum class TipoOrigen {
+    @PropertyName("SISTEMA")  SISTEMA,
+    @PropertyName("USUARIO")  USUARIO
+}
+
+enum class Visibilidad {
+    @PropertyName("publica")  PUBLICA,   // ← coincide con lo que hay en Firestore
+    @PropertyName("privada")  PRIVADA
+}

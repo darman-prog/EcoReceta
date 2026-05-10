@@ -9,12 +9,18 @@ import eco.receta.app.data.repository.RecipeRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+// ── Patrón Loading / Success / Error ────────────────────────────────────────
+sealed class RecipesState {
+    object Loading : RecipesState()
+    data class Success(val recipes: List<Recipe>) : RecipesState()
+    data class Error(val message: String) : RecipesState()
+}
+
 data class HomeUiState(
-    val recetasDestacadas: List<Recipe> = emptyList(), // SISTEMA
-    val miRecetario: List<Recipe> = emptyList(),       // privadas del usuario
-    val searchQuery: String = "",
-    val isLoading: Boolean = false,
-    val error: String? = null
+    val recetasSistema: RecipesState = RecipesState.Loading,
+    val recetasComunidad: RecipesState = RecipesState.Loading,
+    val recetasPrivadas: RecipesState = RecipesState.Loading,
+    val searchQuery: String = ""
 )
 
 class HomeViewModel(
@@ -24,34 +30,73 @@ class HomeViewModel(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    init { cargarDatos() }
+    // Lista completa sin filtrar (para que la búsqueda funcione sobre todos)
+    private var todasLasRecetas: List<Recipe> = emptyList()
 
-    fun onSearchQueryChange(query: String) {
-        _uiState.update { it.copy(searchQuery = query) }
+    init {
+        cargarRecetasSistema()
+        cargarRecetasPrivadas()
     }
 
-    private fun cargarDatos() {
+    // ── Consulta A: recetas oficiales del sistema ────────────────────────
+    private fun cargarRecetasSistema() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-
-            // ── Fusión de Consulta A + Consulta B ────────────────────────
-            // combine() espera ambos flows y emite cada vez que uno cambia
-            combine(
-                repository.getRecetasSistema(),   // Consulta A
-                repository.getRecetasPrivadas()   // Consulta B
-            ) { sistema, privadas ->
-                HomeUiState(
-                    recetasDestacadas = sistema,
-                    miRecetario       = privadas,
-                    isLoading         = false
-                )
-            }.catch { e ->
-                _uiState.update {
-                    it.copy(isLoading = false, error = e.message)
+            repository.getRecetasSistema()
+                .catch { e ->
+                    _uiState.update {
+                        it.copy(recetasSistema = RecipesState.Error(
+                            e.message ?: "Error al cargar recetas"
+                        ))
+                    }
                 }
-            }.collect { nuevoEstado ->
-                _uiState.value = nuevoEstado
+                .collect { recetas ->
+                    todasLasRecetas = recetas
+                    _uiState.update {
+                        it.copy(recetasSistema = RecipesState.Success(recetas))
+                    }
+                }
+        }
+    }
+
+    // ── Consulta B: recetas privadas del usuario actual ──────────────────
+    private fun cargarRecetasPrivadas() {
+        viewModelScope.launch {
+            repository.getRecetasPrivadas()
+                .catch { e ->
+                    _uiState.update {
+                        it.copy(recetasPrivadas = RecipesState.Error(
+                            e.message ?: "Error al cargar tu recetario"
+                        ))
+                    }
+                }
+                .collect { recetas ->
+                    _uiState.update {
+                        it.copy(recetasPrivadas = RecipesState.Success(recetas))
+                    }
+                }
+        }
+    }
+
+    // ── Búsqueda en tiempo real ──────────────────────────────────────────
+    fun onSearchQueryChange(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
+
+        if (query.isBlank()) {
+            // Sin búsqueda: muestra todo
+            _uiState.update {
+                it.copy(recetasSistema = RecipesState.Success(todasLasRecetas))
             }
+            return
+        }
+
+        // Filtra por nombre o categoría (insensible a mayúsculas)
+        val filtradas = todasLasRecetas.filter { receta ->
+            receta.nombre.contains(query, ignoreCase = true) ||
+                    receta.categoria.contains(query, ignoreCase = true)
+        }
+
+        _uiState.update {
+            it.copy(recetasSistema = RecipesState.Success(filtradas))
         }
     }
 }

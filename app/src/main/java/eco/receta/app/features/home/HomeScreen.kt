@@ -1,3 +1,5 @@
+// eco/receta/app/features/home/HomeScreen.kt
+
 package eco.receta.app.features.home
 
 import androidx.compose.foundation.background
@@ -16,26 +18,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import coil.compose.AsyncImagePainter
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.SubcomposeAsyncImageContent
+import com.google.firebase.auth.FirebaseAuth
 import eco.receta.app.data.model.Recipe
-import eco.receta.app.ui.theme.EcoRecetaTheme
 
 // ─── Colores del Figma ───────────────────────────────────────────────────────
-private val ColorCream      = Color(0xFFFAF3EE)   // fondo general
-private val ColorDarkBrown  = Color(0xFF2C1A0E)   // navbar inferior + textos fuertes
-private val ColorRed        = Color(0xFFD94F3D)   // precio destacado + badge
-private val ColorGold       = Color(0xFFC8922A)   // "Ver todo", íconos activos
-private val ColorBodyText   = Color(0xFF5C4033)   // texto secundario
-private val ColorFieldBg    = Color(0xFFEDE8DF)   // fondo barra de búsqueda
-private val ColorCardBg     = Color(0xFFFFF8F2)   // fondo tarjetas lista
+private val ColorCream     = Color(0xFFFAF3EE)
+private val ColorDarkBrown = Color(0xFF2C1A0E)
+private val ColorRed       = Color(0xFFD94F3D)
+private val ColorGold      = Color(0xFFC8922A)
+private val ColorBodyText  = Color(0xFF5C4033)
+private val ColorFieldBg   = Color(0xFFEDE8DF)
+private val ColorCardBg    = Color(0xFFFFF8F2)
 
 @Composable
 fun HomeScreen(
@@ -43,37 +47,23 @@ fun HomeScreen(
     onNavigateToExplore: () -> Unit = {},
     onNavigateToCreate: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
-    onRecipeClick: (String) -> Unit = {}
+    onRecipeClick: (String) -> Unit = {},
+    onLogout: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    HomeContent(
-        state = state,
-        onSearchQueryChange = viewModel::onSearchQueryChange,
-        onNavigateToExplore = onNavigateToExplore,
-        onNavigateToCreate = onNavigateToCreate,
-        onNavigateToProfile = onNavigateToProfile,
-        onRecipeClick = onRecipeClick
-    )
-}
+    // Nombre del usuario autenticado (Google o Email)
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    val userName = currentUser?.displayName?.split(" ")?.firstOrNull() ?: "Chef"
 
-@Composable
-fun HomeContent(
-    state: HomeUiState,
-    onSearchQueryChange: (String) -> Unit,
-    onNavigateToExplore: () -> Unit,
-    onNavigateToCreate: () -> Unit,
-    onNavigateToProfile: () -> Unit,
-    onRecipeClick: (String) -> Unit
-) {
     Scaffold(
         containerColor = ColorCream,
         bottomBar = {
             EcoBottomNavBar(
-                currentRoute = "home",
-                onHomeClick = {},
+                currentRoute   = "home",
+                onHomeClick    = {},
                 onExploreClick = onNavigateToExplore,
-                onCreateClick = onNavigateToCreate,
+                onCreateClick  = onNavigateToCreate,
                 onProfileClick = onNavigateToProfile
             )
         }
@@ -86,84 +76,141 @@ fun HomeContent(
             contentPadding = PaddingValues(bottom = 24.dp)
         ) {
 
-            // ── TopBar ──────────────────────────────────────────────────
+            // ── TopBar con foto de perfil real ───────────────────────────
             item {
-                HomeTopBar()
+                HomeTopBar(
+                    userName    = userName,
+                    photoUrl    = currentUser?.photoUrl?.toString(),
+                    onLogout    = onLogout
+                )
             }
 
-            // ── Título ──────────────────────────────────────────────────
+            // ── Título ───────────────────────────────────────────────────
             item {
                 Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
                     Text(
                         text = "¿Qué hay en la",
                         fontSize = 32.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = ColorDarkBrown,
-                        lineHeight = 36.sp
+                        color = ColorDarkBrown
                     )
                     Text(
                         text = "despensa hoy?",
                         fontSize = 32.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = ColorDarkBrown,
-                        lineHeight = 36.sp
+                        color = ColorDarkBrown
                     )
                 }
             }
 
             // ── Barra de búsqueda ────────────────────────────────────────
             item {
-                SearchBar(
+                HomeSearchBar(
                     query = state.searchQuery,
-                    onQueryChange = onSearchQueryChange,
+                    onQueryChange = viewModel::onSearchQueryChange,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
                 )
             }
 
-            // ── Tarjeta destacada ────────────────────────────────────────
+            // ── Sección: Recetas del Sistema ─────────────────────────────
             item {
-                state.featuredRecipe?.let { recipe ->
-                    FeaturedRecipeCard(
-                        recipe = recipe,
-                        onClick = { onRecipeClick(recipe.id) },
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
-                    )
-                }
-            }
-
-            // ── Encabezado sección ───────────────────────────────────────
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Explora Sabores Locales",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = ColorDarkBrown
-                    )
-                }
-            }
-
-            // ── Lista de recetas locales ─────────────────────────────────
-            items(state.localRecipes) { recipe ->
-                LocalRecipeItem(
-                    recipe = recipe,
-                    onClick = { onRecipeClick(recipe.id) },
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
+                SectionHeader(
+                    title   = "Explora Sabores Locales",
+                    onVerTodo = onNavigateToExplore
                 )
+            }
+
+            // ── Manejo de estados Loading / Success / Error ───────────────
+            when (val sistemaState = state.recetasSistema) {
+
+                is RecipesState.Loading -> item {
+                    LoadingContent()
+                }
+
+                is RecipesState.Error -> item {
+                    ErrorContent(message = sistemaState.message)
+                }
+
+                is RecipesState.Success -> {
+                    val recetas = sistemaState.recipes
+
+                    if (recetas.isEmpty()) {
+                        item { EmptyContent() }
+                    } else {
+                        // Primera receta: tarjeta grande destacada
+                        item {
+                            FeaturedRecipeCard(
+                                recipe  = recetas.first(),
+                                onClick = { onRecipeClick(recetas.first().id) },
+                                modifier = Modifier.padding(
+                                    horizontal = 20.dp, vertical = 12.dp
+                                )
+                            )
+                        }
+
+                        // Resto: lista de tarjetas pequeñas
+                        items(
+                            items = recetas.drop(1),
+                            key   = { it.id }   // key mejora el rendimiento del LazyColumn
+                        ) { recipe ->
+                            LocalRecipeItem(
+                                recipe  = recipe,
+                                onClick = { onRecipeClick(recipe.id) },
+                                modifier = Modifier.padding(
+                                    horizontal = 20.dp, vertical = 6.dp
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            // ── Sección: Mi Recetario Privado ────────────────────────────
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                SectionHeader(title = "Mi Recetario", onVerTodo = onNavigateToProfile)
+            }
+
+            when (val privadasState = state.recetasPrivadas) {
+                is RecipesState.Loading -> item { LoadingContent() }
+                is RecipesState.Error   -> item { ErrorContent(message = privadasState.message) }
+                is RecipesState.Success -> {
+                    if (privadasState.recipes.isEmpty()) {
+                        item {
+                            Text(
+                                text = "Aún no tienes recetas guardadas.",
+                                color = ColorBodyText,
+                                fontSize = 13.sp,
+                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                            )
+                        }
+                    } else {
+                        items(
+                            items = privadasState.recipes,
+                            key   = { it.id }
+                        ) { recipe ->
+                            LocalRecipeItem(
+                                recipe  = recipe,
+                                onClick = { onRecipeClick(recipe.id) },
+                                modifier = Modifier.padding(
+                                    horizontal = 20.dp, vertical = 6.dp
+                                )
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
 
-// ─── TopBar ──────────────────────────────────────────────────────────────────
+// ─── TopBar con foto real de Google ──────────────────────────────────────────
 @Composable
-private fun HomeTopBar() {
+private fun HomeTopBar(
+    userName: String,
+    photoUrl: String?,
+    onLogout: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -173,36 +220,130 @@ private fun HomeTopBar() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = buildAnnotatedString {
-                append("Eco")
-                withStyle(SpanStyle(color = ColorGold, fontWeight = FontWeight.ExtraBold)) {
-                    append("Receta")
-                }
-            },
+            text = "EcoReceta",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = ColorDarkBrown
         )
-        Box(
-            modifier = Modifier
-                .size(38.dp)
-                .clip(CircleShape)
-                .background(ColorFieldBg),
-            contentAlignment = Alignment.Center
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = "Perfil",
-                tint = ColorBodyText,
-                modifier = Modifier.size(22.dp)
+            Text(
+                text = "Hola, $userName",
+                fontSize = 13.sp,
+                color = ColorBodyText
+            )
+
+            // Foto de perfil de Google — si no tiene, muestra ícono
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(ColorFieldBg),
+                contentAlignment = Alignment.Center
+            ) {
+                if (photoUrl != null) {
+                    AsyncImage(
+                        model = photoUrl,
+                        contentDescription = "Foto de perfil",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Perfil",
+                        tint = ColorBodyText,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ─── Barra de Navegación Personalizada (EcoBottomNavBar) ───────────────────
+
+@Composable
+fun EcoBottomNavBar(
+    currentRoute: String,           // Ruta actual para saber qué botón resaltar
+    onHomeClick: () -> Unit,        // Acción al pulsar Inicio
+    onExploreClick: () -> Unit,     // Acción al pulsar Explorar
+    onCreateClick: () -> Unit,      // Acción al pulsar Crear
+    onProfileClick: () -> Unit      // Acción al pulsar Perfil
+) {
+    // Definimos la lista de ítems para no repetir código
+    val navItems = listOf(
+        Triple("home", "🏠", "INICIO"),
+        Triple("explore", "🧭", "EXPLORAR"),
+        Triple("create", "🍴", "CREAR"),
+        Triple("profile", "👤", "PERFIL")
+    )
+    val actions = listOf(onHomeClick, onExploreClick, onCreateClick, onProfileClick)
+
+    // Contenedor principal de la barra (Material 3)
+    NavigationBar(
+        containerColor = ColorDarkBrown, // Fondo oscuro definido arriba
+        tonalElevation = 8.dp            // Sombra sutil
+    ) {
+        navItems.forEachIndexed { index, item ->
+            val isSelected = currentRoute == item.first
+
+            NavigationBarItem(
+                selected = isSelected,
+                onClick = actions[index],
+                // Personalización del ICONO con degradado y bordes
+                icon = {
+                    Box(
+                        modifier = Modifier
+                            // 1. Radio del borde (esquinas suaves)
+                            .clip(RoundedCornerShape(12.dp))
+                            // 2. Fondo: Degradado si está seleccionado, transparente si no
+                            .background(
+                                if (isSelected) Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color(0xFFD2B48C), // Marrón claro (Arriba)
+                                        Color(0xFF8B5E3C)  // Marrón medio (Abajo)
+                                    )
+                                ) else Brush.linearGradient(
+                                    listOf(
+                                        Color.Transparent,
+                                        Color.Transparent
+                                    )
+                                )
+                            )
+                            // 3. Espaciado interno del cuadro resaltado
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = item.second, fontSize = 20.sp)
+                    }
+                },
+                // Etiqueta de texto debajo del icono
+                label = {
+                    Text(
+                        text = item.third,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                // Colores de los estados del botón
+                colors = NavigationBarItemDefaults.colors(
+                    selectedTextColor = ColorGold,              // Texto amarillo al seleccionar
+                    unselectedTextColor = Color.White.copy(0.5f), // Texto grisáceo al no seleccionar
+                    indicatorColor = Color.Transparent          // Ocultamos el círculo feo por defecto
+                )
             )
         }
     }
 }
 
-// ─── Barra de búsqueda ────────────────────────────────────────────────────────
+
+// ─── Barra de búsqueda ───────────────────────────────────────────────────────
 @Composable
-private fun SearchBar(
+private fun HomeSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier
@@ -213,7 +354,7 @@ private fun SearchBar(
         placeholder = {
             Text(
                 text = "Busca ingredientes o recetas...",
-                color = Color(0xF28C7C6D),
+                color = Color(0xFF9E8E7E),
                 fontSize = 14.sp
             )
         },
@@ -229,14 +370,41 @@ private fun SearchBar(
         modifier = modifier.fillMaxWidth(),
         colors = OutlinedTextFieldDefaults.colors(
             unfocusedContainerColor = ColorFieldBg,
-            focusedContainerColor = ColorFieldBg,
-            unfocusedBorderColor = Color.Transparent,
-            focusedBorderColor = ColorGold
+            focusedContainerColor   = ColorFieldBg,
+            unfocusedBorderColor    = Color.Transparent,
+            focusedBorderColor      = ColorGold
         )
     )
 }
 
-// ─── Tarjeta destacada (grande) ───────────────────────────────────────────────
+// ─── Encabezado de sección ───────────────────────────────────────────────────
+@Composable
+private fun SectionHeader(title: String, onVerTodo: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = title,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = ColorDarkBrown
+        )
+        TextButton(onClick = onVerTodo) {
+            Text(
+                text = "Ver todo",
+                color = ColorGold,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp
+            )
+        }
+    }
+}
+
+// ─── Tarjeta destacada (grande) con Coil ─────────────────────────────────────
 @Composable
 private fun FeaturedRecipeCard(
     recipe: Recipe,
@@ -244,22 +412,44 @@ private fun FeaturedRecipeCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        onClick = onClick,
-        modifier = modifier
+        onClick   = onClick,
+        modifier  = modifier
             .fillMaxWidth()
             .height(220.dp),
-        shape = RoundedCornerShape(20.dp),
+        shape     = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFF3D2010)) // placeholder oscuro
-            )
+            // ── Imagen con Coil — muestra shimmer mientras carga ─────────
+            SubcomposeAsyncImage(
+                model            = recipe.imageUrl,
+                contentDescription = recipe.nombre,
+                contentScale     = ContentScale.Crop,
+                modifier         = Modifier.fillMaxSize()
+            ) {
+                when (painter.state) {
+                    is AsyncImagePainter.State.Loading -> {
+                        // Shimmer mientras carga la imagen
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color(0xFFD6C5B5))
+                        )
+                    }
+                    is AsyncImagePainter.State.Error -> {
+                        // Placeholder si falla la carga
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color(0xFF3D2010))
+                        )
+                    }
+                    else -> SubcomposeAsyncImageContent()
+                }
+            }
 
-            // Gradiente
+            // ── Gradiente para legibilidad del texto ─────────────────────
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -271,32 +461,32 @@ private fun FeaturedRecipeCard(
                     )
             )
 
-            // Badge
+            // ── Badge precio ─────────────────────────────────────────────
             Surface(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(12.dp),
-                shape = RoundedCornerShape(50),
-                color = ColorRed
+                shape    = RoundedCornerShape(50),
+                color    = ColorRed
             ) {
                 Text(
-                    text = "$${"%,.0f".format(recipe.totalCost).replace(",", ".")}",
-                    color = Color.White,
+                    text     = "$${"%,.0f".format(recipe.costoTotal).replace(",", ".")}",
+                    color    = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                 )
             }
 
-            // Texto
+            // ── Texto inferior ───────────────────────────────────────────
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .padding(16.dp)
             ) {
                 Text(
-                    text = recipe.name,
-                    color = Color.White,
+                    text     = recipe.nombre,
+                    color    = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp,
                     maxLines = 2,
@@ -308,17 +498,13 @@ private fun FeaturedRecipeCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "⏱ ${recipe.timeMinutes} min",
+                        text  = "⏱ ${recipe.tiempoMinutos} min",
                         color = Color.White.copy(alpha = 0.9f),
                         fontSize = 13.sp
                     )
+                    Text("•", color = Color.White.copy(alpha = 0.6f), fontSize = 13.sp)
                     Text(
-                        text = "•",
-                        color = Color.White.copy(alpha = 0.6f),
-                        fontSize = 13.sp
-                    )
-                    Text(
-                        text = "🍴 ${recipe.level}",
+                        text  = "🍴 ${recipe.nivel}",
                         color = Color.White.copy(alpha = 0.9f),
                         fontSize = 13.sp
                     )
@@ -328,7 +514,7 @@ private fun FeaturedRecipeCard(
     }
 }
 
-// ─── Tarjeta de lista (pequeña) ───────────────────────────────────────────────
+// ─── Tarjeta pequeña de lista con Coil ───────────────────────────────────────
 @Composable
 private fun LocalRecipeItem(
     recipe: Recipe,
@@ -336,184 +522,125 @@ private fun LocalRecipeItem(
     modifier: Modifier = Modifier
 ) {
     Card(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = ColorCardBg),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+        onClick   = onClick,
+        modifier  = modifier.fillMaxWidth(),
+        shape     = RoundedCornerShape(16.dp),
+        colors    = CardDefaults.cardColors(containerColor = ColorCardBg),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
-            modifier = Modifier
+            modifier  = Modifier
                 .fillMaxWidth()
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-
-            Box(
-                modifier = Modifier
+            // ── Imagen pequeña con Coil ──────────────────────────────────
+            SubcomposeAsyncImage(
+                model            = recipe.imageUrl,
+                contentDescription = recipe.nombre,
+                contentScale     = ContentScale.Crop,
+                modifier         = Modifier
                     .size(72.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFF8B5E3C))
-            )
+            ) {
+                when (painter.state) {
+                    is AsyncImagePainter.State.Loading ->
+                        Box(Modifier
+                            .fillMaxSize()
+                            .background(Color(0xFFD6C5B5)))
+                    is AsyncImagePainter.State.Error ->
+                        Box(Modifier
+                            .fillMaxSize()
+                            .background(Color(0xFF8B5E3C)))
+                    else -> SubcomposeAsyncImageContent()
+                }
+            }
 
+            // ── Info ─────────────────────────────────────────────────────
             Column(modifier = Modifier.weight(1f)) {
-
                 Text(
-                    text = "${recipe.region}  •  ${recipe.category}",
-                    fontSize = 11.sp,
+                    text       = "${recipe.region}  •  ${recipe.categoria}",
+                    fontSize   = 11.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = ColorBodyText.copy(alpha = 0.6f),
+                    color      = ColorBodyText.copy(alpha = 0.6f),
                     letterSpacing = 0.5.sp
                 )
-
                 Spacer(modifier = Modifier.height(4.dp))
-
                 Text(
-                    text = recipe.name,
-                    fontSize = 15.sp,
+                    text       = recipe.nombre,
+                    fontSize   = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    color = ColorDarkBrown,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    color      = ColorDarkBrown,
+                    maxLines   = 2,
+                    overflow   = TextOverflow.Ellipsis
                 )
-
                 Spacer(modifier = Modifier.height(6.dp))
-
                 Text(
-                    text = "$${"%,.0f".format(recipe.totalCost).replace(",", ".")}",
-                    fontSize = 14.sp,
+                    text       = "$${"%,.0f".format(recipe.costoTotal).replace(",", ".")}",
+                    fontSize   = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = ColorRed
+                    color      = ColorRed
                 )
             }
 
+            // ── Botón + ──────────────────────────────────────────────────
             Box(
                 modifier = Modifier
-                    .size(38.dp)
+                    .size(32.dp)
                     .clip(CircleShape)
                     .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "+",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Light,
-                    color = ColorGold
-                )
+                Text("+", fontSize = 20.sp, color = ColorGold)
             }
         }
     }
 }
 
-// ─── Bottom Navigation Bar ───────────────────────────────────────────────────
-@Composable
-fun EcoBottomNavBar(
-    currentRoute: String,
-    onHomeClick: () -> Unit,
-    onExploreClick: () -> Unit,
-    onCreateClick: () -> Unit,
-    onProfileClick: () -> Unit
-) {
-    NavigationBar(
-        containerColor = ColorDarkBrown,
-        tonalElevation = 0.dp
-    ) {
-        val navItems = listOf(
-            Triple("home", "🏠", "INICIO"),
-            Triple("explore", "🧭", "EXPLORAR"),
-            Triple("create", "🍴", "CREAR"),
-            Triple("profile", "👤", "PERFIL")
-        )
-        val actions = listOf(onHomeClick, onExploreClick, onCreateClick, onProfileClick)
+// ─── Estados visuales ─────────────────────────────────────────────────────────
 
-        navItems.forEachIndexed { index, item ->
-            val isSelected = currentRoute == item.first
-            NavigationBarItem(
-                selected = isSelected,
-                onClick = actions[index],
-                icon = {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp)) // Border Radius personalizado
-                            .background(
-                                if (isSelected) Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color(0xFFD2B48C), // Marrón claro
-                                        Color(0xFF8B5E3C)  // Marrón medio
-                                    )
-                                ) else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent))
-                            )
-                            .padding(horizontal = 16.dp, vertical = 4.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = item.second, fontSize = 20.sp)
-                    }
-                },
-                label = {
-                    Text(
-                        text = item.third,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedTextColor = ColorGold,
-                    unselectedTextColor = Color.White.copy(alpha = 0.5f),
-                    indicatorColor = Color.Transparent // Ocultamos el indicador por defecto
-                )
-            )
-        }
+@Composable
+private fun LoadingContent() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(120.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator(color = ColorGold)
     }
 }
 
-
-// ─── Preview ─────────────────────────────────────────────────────────────────
-
-@Preview(showBackground = true, device = "spec:width=411dp,height=891dp")
 @Composable
-fun HomeScreenPreview() {
-    val mockRecipes = listOf(
-        Recipe(
-            id = "1",
-            name = "Bandeja Paisa Tradicional",
-            timeMinutes = 45,
-            level = "Fácil",
-            totalCost = 12500.0,
-            region = "ANTIOQUIA",
-            category = "TRADICIONAL"
-        ),
-        Recipe(
-            id = "2",
-            name = "Ajiaco Santafereño",
-            timeMinutes = 60,
-            level = "Medio",
-            totalCost = 18000.0,
-            region = "BOGOTÁ",
-            category = "GOURMET"
-        ),
-        Recipe(
-            id = "3",
-            name = "Arepa de Chócolo",
-            timeMinutes = 20,
-            level = "Fácil",
-            totalCost = 6500.0,
-            region = "ANTIOQUIA",
-            category = "SNACK"
+private fun ErrorContent(message: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(20.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text      = "⚠️ $message",
+            color     = ColorRed,
+            fontSize  = 14.sp,
+            fontWeight = FontWeight.Medium
         )
-    )
+    }
+}
 
-    EcoRecetaTheme {
-        HomeContent(
-            state = HomeUiState(
-                featuredRecipe = mockRecipes.first(),
-                localRecipes = mockRecipes.drop(1)
-            ),
-            onSearchQueryChange = {},
-            onNavigateToExplore = {},
-            onNavigateToCreate = {},
-            onNavigateToProfile = {},
-            onRecipeClick = {}
+@Composable
+private fun EmptyContent() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(20.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text     = "No hay recetas disponibles aún.",
+            color    = ColorBodyText,
+            fontSize = 14.sp
         )
     }
 }
