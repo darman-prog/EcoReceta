@@ -2,12 +2,15 @@ package eco.receta.app.core.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.google.firebase.auth.FirebaseAuth
 import eco.receta.app.features.auth.LoginScreen
 import eco.receta.app.features.auth.RegisterScreen
 import eco.receta.app.features.home.HomeScreen
+import eco.receta.app.features.recipes.detail.RecipeDetailScreen
 
 @Composable
 fun AppNavHost(
@@ -51,7 +54,7 @@ fun AppNavHost(
                 onNavigateToCreate   = { navController.navigate(Routes.CREATE) },
                 onNavigateToProfile  = { navController.navigate(Routes.PROFILE) },
                 onRecipeClick        = { id ->
-                    navController.navigate("${Routes.RECIPE_DETAIL}/$id")
+                    navController.navigate("recipe_detail/$id")
                 },
                 onLogout = {
                     FirebaseAuth.getInstance().signOut()
@@ -62,9 +65,21 @@ fun AppNavHost(
             )
         }
 
+
+        // ── DETALLE DE RECETA ─────────────────────────────────────────────
+        composable(
+            route = "recipe_detail/{recipeId}",
+            arguments = listOf(navArgument("recipeId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val recipeId = backStackEntry.arguments?.getString("recipeId") ?: return@composable
+            RecipeDetailScreen(
+                recipeId       = recipeId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
         composable(Routes.EXPLORE)  { }
         composable(Routes.CREATE)   { }
         composable(Routes.PROFILE)  { }
-        composable("${Routes.RECIPE_DETAIL}/{recipeId}") { }
     }
 }

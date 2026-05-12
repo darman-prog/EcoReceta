@@ -8,4 +8,7 @@ object  Routes {
     const val CREATE        = "create"
     const val PROFILE       = "profile"
     const val RECIPE_DETAIL = "recipe_detail"
+
+    fun recipeDetail(recipeId: String) = "$RECIPE_DETAIL/$recipeId"
+
 }

@@ -41,3 +41,13 @@ por ahora no se avanzado en ninguna otra cosa*
 completado ahora toca sacar datos de la api y empezar a armar el home y los demas screen*
 
 *by Diego Meza.*
+
+
+# Feature 4
+28/04/2026
+
+*Acabamos HomeExplorer y RecipedetailScreen y subimos todos los datos del json desde python a firestore 
+y despues creamos dos colecciones para poder dividir los productos y las recetas y ademas terminamos de armar la arquitectura de l proyecto completo en diferentes packages
+falta seguir construyendo el resto de la app y sus screens*
+
+*by Diego Meza.*

@@ -8,23 +8,30 @@ data class Recipe(
     val id: String = "",
     val nombre: String = "",
     val descripcion: String = "",
+
+    // En la foto dice "imageUrl", eliminamos el "_url"
     val imageUrl: String = "",
+
+    // En la foto dice "tiempoMinutos", eliminamos el "_minutos"
     val tiempoMinutos: Int = 0,
+
     val porciones: Int = 0,
     val nivel: String = "",              // "Fácil", "Medio", "Difícil"
+
+    // En la foto dice "costoTotal", eliminamos el "_total"
     val costoTotal: Double = 0.0,
+
     val region: String = "",
     val categoria: String = "",
 
-    // ── Metadata Keys del sistema de visibilidad ──────────────────────────
+    // ── Metadata Keys ─────────────────────────────────────────────────────
     val tipoOrigen: TipoOrigen = TipoOrigen.USUARIO,
     val visibilidad: Visibilidad = Visibilidad.PRIVADA,
     val autorID: String = "",
     val autorNombre: String = "",
     val esOficial: Boolean = false,
 
-    // ── Referencia a productos para cálculo dinámico de precios ──────────
-    // Cada string referencia el campo `producto` de la colección `productos`
+    // ── Referencia a productos ────────────────────────────────────────────
     val ingredientes_ids: List<String> = emptyList(),
 
     val creadoEn: Long = 0L
@@ -36,6 +43,6 @@ enum class TipoOrigen {
 }
 
 enum class Visibilidad {
-    @PropertyName("publica")  PUBLICA,   // ← coincide con lo que hay en Firestore
+    @PropertyName("publica")  PUBLICA,   // Mantiene "publica" en minúsculas como en la foto
     @PropertyName("privada")  PRIVADA
 }
