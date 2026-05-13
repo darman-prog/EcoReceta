@@ -1,4 +1,5 @@
 package eco.receta.app.data.repository
+
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
@@ -14,6 +15,11 @@ class RecipeRepository {
 
     private val db   = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+
+    // ═══════════════════════════════════════════════════════════
+    // INSTANCIA DE UserRepository (NUEVO)
+    // ═══════════════════════════════════════════════════════════
+    private val userRepository = UserRepository()
 
     // ── Rutas de Firestore ────────────────────────────────────────────────
     private val colPublicas  = db.collection("recetas_publicas")
@@ -97,5 +103,16 @@ class RecipeRepository {
             // Va a /usuarios/{UID}/recetas_privadas/
             colPrivadas(uid).add(recetaFinal).await()
         }
+
+        // ═══════════════════════════════════════════════════════════
+        // NUEVO: Incrementar contador de recetas del usuario
+        // Se ejecuta DESPUÉS de guardar la receta exitosamente
+        // ═══════════════════════════════════════════════════════════
+        userRepository.incrementarRecetasCreadas(uid)
+            .onFailure { e ->
+                // Loguear error pero no fallar la creación de receta
+                // El contador puede sincronizarse después
+                println("Error actualizando stats: ${e.message}")
+            }
     }
 }

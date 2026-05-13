@@ -33,13 +33,14 @@ import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import com.google.firebase.auth.FirebaseAuth
+import eco.receta.app.core.components.EcoBottomNavBar
 import eco.receta.app.data.model.Recipe
 
 // ─── Colores del Figma ───────────────────────────────────────────────────────
 private val ColorCream     = Color(0xFFF6EFED)
-private val ColorDarkBrown = Color(0xFF2C1A0E)
+val ColorDarkBrown = Color(0xFF2C1A0E)
 private val ColorRed       = Color(0xFFD94F3D)
-private val ColorGold      = Color(0xFFC8922A)
+val ColorGold      = Color(0xFFC8922A)
 private val ColorBodyText  = Color(0xFF5C4033)
 private val ColorFieldBg   = Color(0xFFEDE8DF)
 private val ColorCardBg    = Color(0xFFF1E4DF)
@@ -265,83 +266,6 @@ private fun HomeTopBar(
         }
     }
 }
-
-// ─── Barra de Navegación Personalizada (EcoBottomNavBar) ───────────────────
-
-@Composable
-fun EcoBottomNavBar(
-    currentRoute: String,           // Ruta actual para saber qué botón resaltar
-    onHomeClick: () -> Unit,        // Acción al pulsar Inicio
-    onExploreClick: () -> Unit,     // Acción al pulsar Explorar
-    onCreateClick: () -> Unit,      // Acción al pulsar Crear
-    onProfileClick: () -> Unit      // Acción al pulsar Perfil
-) {
-    // Definimos la lista de ítems para no repetir código
-    val navItems = listOf(
-        Triple("home", "🏠", "INICIO"),
-        Triple("explore", "🧭", "EXPLORAR"),
-        Triple("create", "🍴", "CREAR"),
-        Triple("profile", "👤", "PERFIL")
-    )
-    val actions = listOf(onHomeClick, onExploreClick, onCreateClick, onProfileClick)
-
-    // Contenedor principal de la barra (Material 3)
-    NavigationBar(
-        containerColor = ColorDarkBrown, // Fondo oscuro definido arriba
-        tonalElevation = 8.dp            // Sombra sutil
-    ) {
-        navItems.forEachIndexed { index, item ->
-            val isSelected = currentRoute == item.first
-
-            NavigationBarItem(
-                selected = isSelected,
-                onClick = actions[index],
-                // Personalización del ICONO con degradado y bordes
-                icon = {
-                    Box(
-                        modifier = Modifier
-                            // 1. Radio del borde (esquinas suaves)
-                            .clip(RoundedCornerShape(12.dp))
-                            // 2. Fondo: Degradado si está seleccionado, transparente si no
-                            .background(
-                                if (isSelected) Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color(0xFFD2B48C), // Marrón claro (Arriba)
-                                        Color(0xFF8B5E3C)  // Marrón medio (Abajo)
-                                    )
-                                ) else Brush.linearGradient(
-                                    listOf(
-                                        Color.Transparent,
-                                        Color.Transparent
-                                    )
-                                )
-                            )
-                            // 3. Espaciado interno del cuadro resaltado
-                            .padding(horizontal = 16.dp, vertical = 6.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = item.second, fontSize = 20.sp)
-                    }
-                },
-                // Etiqueta de texto debajo del icono
-                label = {
-                    Text(
-                        text = item.third,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                // Colores de los estados del botón
-                colors = NavigationBarItemDefaults.colors(
-                    selectedTextColor = ColorGold,              // Texto amarillo al seleccionar
-                    unselectedTextColor = Color.White.copy(0.5f), // Texto grisáceo al no seleccionar
-                    indicatorColor = Color.Transparent          // Ocultamos el círculo feo por defecto
-                )
-            )
-        }
-    }
-}
-
 
 // ─── Barra de búsqueda ───────────────────────────────────────────────────────
 @Composable

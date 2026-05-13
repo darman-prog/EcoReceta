@@ -30,8 +30,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
+import eco.receta.app.core.components.EcoBottomNavBar
 import eco.receta.app.data.model.Recipe
-import eco.receta.app.features.home.EcoBottomNavBar
 
 // ─── Colores del Figma ───────────────────────────────────────────────────────
 private val ColorCream     = Color(0xFFFAF3EE)

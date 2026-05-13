@@ -4,37 +4,27 @@ package eco.receta.app.data.model
 
 import com.google.firebase.firestore.PropertyName
 
+
+
 data class Recipe(
     val id: String = "",
     val nombre: String = "",
     val descripcion: String = "",
-
-    // En la foto dice "imageUrl", eliminamos el "_url"
     val imageUrl: String = "",
-
-    // En la foto dice "tiempoMinutos", eliminamos el "_minutos"
     val tiempoMinutos: Int = 0,
-
     val porciones: Int = 0,
-    val nivel: String = "",              // "Fácil", "Medio", "Difícil"
-
-    // En la foto dice "costoTotal", eliminamos el "_total"
+    val nivel: String = "",
     val costoTotal: Double = 0.0,
-
     val region: String = "",
     val categoria: String = "",
-
-    // ── Metadata Keys ─────────────────────────────────────────────────────
     val tipoOrigen: TipoOrigen = TipoOrigen.USUARIO,
     val visibilidad: Visibilidad = Visibilidad.PRIVADA,
     val autorID: String = "",
     val autorNombre: String = "",
     val esOficial: Boolean = false,
-
-    // ── Referencia a productos ────────────────────────────────────────────
     val ingredientes_ids: List<String> = emptyList(),
-
-    val creadoEn: Long = 0L
+    val creadoEn: Long = 0L,
+    val imagen: String = ""        // ← ✅ AGREGAR = ""
 )
 
 enum class TipoOrigen {

@@ -1,6 +1,14 @@
 package eco.receta.app.core.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -11,7 +19,14 @@ import eco.receta.app.features.auth.LoginScreen
 import eco.receta.app.features.auth.RegisterScreen
 import eco.receta.app.features.explore.ExploreScreen
 import eco.receta.app.features.home.HomeScreen
+import eco.receta.app.features.ingredients.IngredientDetailScreen
+import eco.receta.app.features.ingredients.IngredientListScreen
+import eco.receta.app.features.ingredients.IngredientViewModel
+import eco.receta.app.features.profile.ProfileScreen
+import eco.receta.app.features.recipes.create.CreateRecipeScreen
+import eco.receta.app.features.recipes.create.IngredienteSeleccionado
 import eco.receta.app.features.recipes.detail.RecipeDetailScreen
+
 
 @Composable
 fun AppNavHost(
@@ -51,10 +66,10 @@ fun AppNavHost(
 
         composable(Routes.HOME) {
             HomeScreen(
-                onNavigateToExplore  = { navController.navigate(Routes.EXPLORE) },
-                onNavigateToCreate   = { navController.navigate(Routes.CREATE) },
-                onNavigateToProfile  = { navController.navigate(Routes.PROFILE) },
-                onRecipeClick        = { id ->
+                onNavigateToExplore = { navController.navigate(Routes.EXPLORE) },
+                onNavigateToCreate = { navController.navigate(Routes.CREATE) },
+                onNavigateToProfile = { navController.navigate(Routes.PROFILE) },
+                onRecipeClick = { id ->
                     navController.navigate("recipe_detail/$id")
                 },
                 onLogout = {
@@ -74,23 +89,113 @@ fun AppNavHost(
         ) { backStackEntry ->
             val recipeId = backStackEntry.arguments?.getString("recipeId") ?: return@composable
             RecipeDetailScreen(
-                recipeId       = recipeId,
+                recipeId = recipeId,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
 
         composable(Routes.EXPLORE) {
             ExploreScreen(
-                onNavigateToHome    = { navController.popBackStack() },
-                onNavigateToCreate  = { navController.navigate(Routes.CREATE) },
+                onNavigateToHome = { navController.navigate(Routes.HOME) },
+                onNavigateToCreate = { navController.navigate(Routes.CREATE) },
                 onNavigateToProfile = { navController.navigate(Routes.PROFILE) },
-                onRecipeClick       = { id ->
+                onRecipeClick = { id ->
                     navController.navigate("${Routes.RECIPE_DETAIL}/$id")
                 }
             )
         }
 
-        composable(Routes.CREATE)   { }
-        composable(Routes.PROFILE)  { }
+        composable(Routes.CREATE) {
+            CreateRecipeScreen(
+                navController = navController,
+                onNavigateToRoute = { route ->
+                    navController.navigate(route) {
+                        popUpTo(Routes.CREATE) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                // Ir a buscar ingredientes
+                onNavigateToAddIngredients = {
+                    navController.navigate(Routes.INGREDIENT_LIST)
+                },
+                // Volver atrás después de guardar
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        // ═══════════════════════════════════════════════════════════
+        // PROFILE — PERFIL CON STATS Y BADGES (COMPLETO)
+        // ═══════════════════════════════════════════════════════════
+        composable(Routes.PROFILE) {
+            ProfileScreen(
+                navController = navController  // ← Solo esto
+            )
+        }
+        composable(Routes.INGREDIENT_LIST) {
+            IngredientListScreen(
+                navController = navController,
+                onNavigateBack = { navController.popBackStack() },
+                onIngredientSelected = { ingrediente ->
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("ingrediente_seleccionado", ingrediente)
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // NUEVO: Detalle de ingrediente
+        // ═══════════════════════════════════════════════════════════
+        composable("ingredient_detail/{ingredientId}") { backStackEntry ->
+            val ingredientId = backStackEntry.arguments?.getString("ingredientId") ?: ""
+
+            // ═══════════════════════════════════════════════════════════
+            // BUSCAR EL INGREDIENTE EN EL VIEWMODEL
+            // ═══════════════════════════════════════════════════════════
+            val ingredientViewModel: IngredientViewModel = viewModel()
+            val ingredient = ingredientViewModel.buscarProductoPorId(ingredientId)
+
+            if (ingredient != null) {
+                // ═══════════════════════════════════════════════════════
+                // AHORA SÍ podemos llamar a IngredientDetailScreen
+                // con el objeto completo que espera
+                // ═══════════════════════════════════════════════════════
+                IngredientDetailScreen(
+                    ingredient = ingredient,           // ← Pasa el objeto completo
+                    onNavigateBack = { navController.popBackStack() },
+                    onAddToRecipe = {
+                        // Crear el seleccionado y guardar en savedStateHandle
+                        val precioMasBarato = ingredient.precios.minOfOrNull { it.precio } ?: 0.0
+                        val seleccionado = IngredienteSeleccionado(
+                            productoId = ingredient.id,
+                            nombre = ingredient.producto,
+                            precio = precioMasBarato,
+                            cantidad = "${ingredient.tamano} ${ingredient.unidad}",
+                            unidad = ingredient.unidad
+                        )
+                        navController.previousBackStackEntry
+                            ?.savedStateHandle
+                            ?.set("ingrediente_seleccionado", seleccionado)
+                        navController.popBackStack()
+                    }
+                )
+            } else {
+                // Ingrediente no encontrado, mostrar error o volver
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Producto no encontrado")
+                        Button(onClick = { navController.popBackStack() }) {
+                            Text("Volver")
+                        }
+                    }
+                }
+            }
+        }
     }
 }
