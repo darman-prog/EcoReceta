@@ -138,9 +138,9 @@ fun IngredientDetailScreen(
                     .height(260.dp)
                     .background(CampoFondo)
             ) {
-                if (ingredient.imagenUrl.isNotEmpty()) {
+                if (ingredient.imagen.isNotEmpty()) {
                     AsyncImage(
-                        model = ingredient.imagenUrl,
+                        model = ingredient.imagen,
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
@@ -193,15 +193,15 @@ fun IngredientDetailScreen(
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "${ingredient.marca} · ${ingredient.categoria} · ${ingredient.tamano}${ingredient.unidad}",
+                    "${ingredient.marca} · ${ingredient.categoria} · ${ingredient.tamaño}${ingredient.unidad}",
                     color = GrisTexto,
                     fontSize = 13.sp
                 )
 
-                if (ingredient.tiendasDisponibles.isNotEmpty()) {
+                if (ingredient.tiendas_disponibles.isNotEmpty()) {
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "Disponible en: ${ingredient.tiendasDisponibles.joinToString(", ")}",
+                        "Disponible en: ${ingredient.tiendas_disponibles.joinToString(", ")}",
                         fontSize = 12.sp,
                         color = Dorado,
                         fontWeight = FontWeight.SemiBold
@@ -240,8 +240,8 @@ fun IngredientDetailScreen(
                 }
 
                 // ── Rango de precios ─────────────────────────────────────
-                if (ingredient.precioMinimo > 0 &&
-                    ingredient.precioMaximo > ingredient.precioMinimo
+                if (ingredient.precio_minimo > 0 &&
+                    ingredient.precio_maximo > ingredient.precio_minimo
                 ) {
                     Spacer(Modifier.height(8.dp))
                     Card(
@@ -258,7 +258,7 @@ fun IngredientDetailScreen(
                             Column {
                                 Text("Más barato", fontSize = 12.sp, color = GrisTexto)
                                 Text(
-                                    "COP $${"%,.0f".format(ingredient.precioMinimo)}",
+                                    "COP $${"%,.0f".format(ingredient.precio_minimo)}",
                                     fontWeight = FontWeight.Bold,
                                     color = VerdePrecio,
                                     fontSize = 16.sp
@@ -267,7 +267,7 @@ fun IngredientDetailScreen(
                             Column(horizontalAlignment = Alignment.End) {
                                 Text("Más caro", fontSize = 12.sp, color = GrisTexto)
                                 Text(
-                                    "COP $${"%,.0f".format(ingredient.precioMaximo)}",
+                                    "COP $${"%,.0f".format(ingredient.precio_maximo)}",
                                     fontWeight = FontWeight.Bold,
                                     color = Rojo,
                                     fontSize = 16.sp

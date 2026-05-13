@@ -41,8 +41,7 @@ private val GrisTexto    = Color(0xFF8D8D8D)
 
 // ─── Categorías para filtros ─────────────────────────────────────────────────
 private val CATEGORIAS = listOf(
-    "Todas", "Frutas", "Verduras", "Carnes", "Lácteos",
-    "Granos", "Bebidas", "Snacks", "Condimentos"
+    "Todas", "Bebidas", "Carnes y Pescados", "Comida Preparada", "Dulces y Pasabocas"
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -286,9 +285,9 @@ private fun IngredientCard(
                     .background(CampoFondo),
                 contentAlignment = Alignment.Center
             ) {
-                if (ingredient.imagenUrl.isNotEmpty()) {
+                if (ingredient.imagen.isNotEmpty()) {
                     AsyncImage(
-                        model = ingredient.imagenUrl,
+                        model = ingredient.imagen,
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
@@ -323,9 +322,9 @@ private fun IngredientCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(Modifier.height(3.dp))
-                if (ingredient.tiendasDisponibles.isNotEmpty()) {
+                if (ingredient.tiendas_disponibles.isNotEmpty()) {
                     Text(
-                        ingredient.tiendasDisponibles.take(3).joinToString(" · "),
+                        ingredient.tiendas_disponibles.take(3).joinToString(" · "),
                         fontSize = 11.sp,
                         color = GrisTexto,
                         maxLines = 1,

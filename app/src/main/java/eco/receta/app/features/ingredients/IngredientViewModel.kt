@@ -38,7 +38,7 @@ class IngredientViewModel : ViewModel() {
     }
 
     // ═══════════════════════════════════════════════════════════
-    // CARGAR productos iniciales (solo 20)
+    // CARGAR productos iniciales
     // ═══════════════════════════════════════════════════════════
     private fun cargarProductosIniciales() {
         viewModelScope.launch {
@@ -53,7 +53,7 @@ class IngredientViewModel : ViewModel() {
                 return@launch
             }
 
-            repository.getProductosPaginados(limit = 20)
+            repository.getProductosPaginados(limit = 300)
                 .onSuccess { productos ->
                     productosCache = productos  // ← Guardar en caché
                     uiState = uiState.copy(
@@ -91,7 +91,7 @@ class IngredientViewModel : ViewModel() {
 
             uiState = uiState.copy(isLoading = true)
 
-            repository.buscarProductos(query, limit = 20)
+            repository.buscarProductos(query, limit = 160)
                 .onSuccess { productos ->
                     uiState = uiState.copy(
                         productos = productos,
@@ -119,12 +119,14 @@ class IngredientViewModel : ViewModel() {
         return uiState.productos.find { it.id == id }
     }
 
-    // Para usar desde NavHost con coroutines
-    suspend fun getProductoById(id: String): Result<Ingredient> {
-        return repository.getProductoById(id)
-    }
+    suspend fun getProductoByIdDesdeFirestore(id: String): Result<Ingredient> {
+        // Primero buscar en caché
+        val enCache = uiState.productos.find { it.id == id }
+        if (enCache != null) {
+            return Result.success(enCache)
+        }
 
-    fun clearError() {
-        uiState = uiState.copy(error = null)
+        // Si no está, cargar desde Firestore
+        return repository.getProductoById(id)
     }
 }

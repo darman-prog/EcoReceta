@@ -4,8 +4,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -15,6 +21,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.google.firebase.auth.FirebaseAuth
+import eco.receta.app.data.model.Ingredient
 import eco.receta.app.features.auth.LoginScreen
 import eco.receta.app.features.auth.RegisterScreen
 import eco.receta.app.features.explore.ExploreScreen
@@ -151,49 +158,43 @@ fun AppNavHost(
         // ═══════════════════════════════════════════════════════════
         composable("ingredient_detail/{ingredientId}") { backStackEntry ->
             val ingredientId = backStackEntry.arguments?.getString("ingredientId") ?: ""
-
-            // ═══════════════════════════════════════════════════════════
-            // BUSCAR EL INGREDIENTE EN EL VIEWMODEL
-            // ═══════════════════════════════════════════════════════════
             val ingredientViewModel: IngredientViewModel = viewModel()
-            val ingredient = ingredientViewModel.buscarProductoPorId(ingredientId)
 
-            if (ingredient != null) {
-                // ═══════════════════════════════════════════════════════
-                // AHORA SÍ podemos llamar a IngredientDetailScreen
-                // con el objeto completo que espera
-                // ═══════════════════════════════════════════════════════
-                IngredientDetailScreen(
-                    ingredient = ingredient,           // ← Pasa el objeto completo
-                    onNavigateBack = { navController.popBackStack() },
-                    onAddToRecipe = {
-                        // Crear el seleccionado y guardar en savedStateHandle
-                        val precioMasBarato = ingredient.precios.minOfOrNull { it.precio } ?: 0.0
-                        val seleccionado = IngredienteSeleccionado(
-                            productoId = ingredient.id,
-                            nombre = ingredient.producto,
-                            precio = precioMasBarato,
-                            cantidad = "${ingredient.tamano} ${ingredient.unidad}",
-                            unidad = ingredient.unidad
-                        )
-                        navController.previousBackStackEntry
-                            ?.savedStateHandle
-                            ?.set("ingrediente_seleccionado", seleccionado)
-                        navController.popBackStack()
-                    }
-                )
-            } else {
-                // Ingrediente no encontrado, mostrar error o volver
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Producto no encontrado")
-                        Button(onClick = { navController.popBackStack() }) {
-                            Text("Volver")
+            var ingredient by remember { mutableStateOf<Ingredient?>(null) }
+            var isLoading by remember { mutableStateOf(true) }
+
+            LaunchedEffect(ingredientId) {
+                isLoading = true
+                ingredientViewModel.getProductoByIdDesdeFirestore(ingredientId)
+                    .onSuccess { ingredient = it }
+                isLoading = false
+            }
+
+            when {
+                isLoading -> { /* loading */ }
+                ingredient == null -> { /* error */ }
+                else -> {
+                    IngredientDetailScreen(
+                        ingredient = ingredient!!,
+                        onNavigateBack = { navController.popBackStack() },
+                        onAddToRecipe = {
+                            // Crear aquí en el NavHost
+                            ingredient?.let { ing ->  // ← 'ing' es garantizado no-null aquí
+                                val precioMasBarato = ing.precios.minOfOrNull { it.precio } ?: 0.0
+                                val seleccionado = IngredienteSeleccionado(
+                                    productoId = ing.id,
+                                    nombre = ing.producto,
+                                    precio = precioMasBarato,
+                                    cantidad = "${ing.tamaño} ${ing.unidad}",
+                                    unidad = ing.unidad
+                                )
+                                navController.previousBackStackEntry
+                                    ?.savedStateHandle
+                                    ?.set("ingrediente_seleccionado", seleccionado)
+                                navController.popBackStack()
+                            }
                         }
-                    }
+                    )
                 }
             }
         }

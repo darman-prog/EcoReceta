@@ -57,4 +57,4 @@ falta seguir construyendo el resto de la app y sus screens*
 
 
 *termine toda la navegacion entre screens y ademas pude hacer que se vean los ingredientes de diferentes supermercados pero falta mejorar las categorias y falta mejorar  lo que es solo los detalles de los ingredientes por que algunos se estan cargando de manera erronea como son las imagenes
-toca mirar bien que se carguen las imagenes con el coil y tambien que se carguen todos los productos pero en sus diferentes categorias y sacar las categorias*
+toca mirar bien que se carguen las imagenes con el coil y tambien que se carguen todos los productos pero en sus diferentes categorias y sacar las categorias y poder crear una receta*

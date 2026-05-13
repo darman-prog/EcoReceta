@@ -16,13 +16,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import eco.receta.app.data.model.Ingredient
-import eco.receta.app.data.model.PrecioTienda
+import eco.receta.app.data.model.PrecioTiendaFirestore
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PriceCompareSheet(
     ingredient: Ingredient,
-    precios: List<PrecioTienda>,
+    precios: List<PrecioTiendaFirestore>,
     isLoading: Boolean,
     onDismiss: () -> Unit,
     onComparar: () -> Unit,
@@ -133,7 +133,7 @@ fun PriceCompareSheet(
 
 @Composable
 private fun PriceStoreItem(
-    precioTienda: PrecioTienda,
+    precioTienda: PrecioTiendaFirestore,
     isBestPrice: Boolean,
     isWorstPrice: Boolean
 ) {
@@ -173,28 +173,11 @@ private fun PriceStoreItem(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = precioTienda.tienda.take(2).uppercase(),
+                        text = precioTienda.tienda,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
                         fontSize = 14.sp
                     )
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column {
-                    Text(
-                        text = precioTienda.tienda,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    if (precioTienda.esPromocion) {
-                        Text(
-                            text = precioTienda.tipoPromocion,
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
                 }
             }
 
