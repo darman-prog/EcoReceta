@@ -9,6 +9,7 @@ import androidx.navigation.navArgument
 import com.google.firebase.auth.FirebaseAuth
 import eco.receta.app.features.auth.LoginScreen
 import eco.receta.app.features.auth.RegisterScreen
+import eco.receta.app.features.explore.ExploreScreen
 import eco.receta.app.features.home.HomeScreen
 import eco.receta.app.features.recipes.detail.RecipeDetailScreen
 
@@ -78,7 +79,17 @@ fun AppNavHost(
             )
         }
 
-        composable(Routes.EXPLORE)  { }
+        composable(Routes.EXPLORE) {
+            ExploreScreen(
+                onNavigateToHome    = { navController.popBackStack() },
+                onNavigateToCreate  = { navController.navigate(Routes.CREATE) },
+                onNavigateToProfile = { navController.navigate(Routes.PROFILE) },
+                onRecipeClick       = { id ->
+                    navController.navigate("${Routes.RECIPE_DETAIL}/$id")
+                }
+            )
+        }
+
         composable(Routes.CREATE)   { }
         composable(Routes.PROFILE)  { }
     }
