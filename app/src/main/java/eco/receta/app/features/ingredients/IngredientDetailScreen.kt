@@ -3,23 +3,38 @@ package eco.receta.app.features.ingredients
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import eco.receta.app.data.model.Ingredient
 import eco.receta.app.data.model.PrecioTiendaFirestore
+
+// ─── Paleta EcoReceta ────────────────────────────────────────────────────────
+private val Crema        = Color(0xFFF6EFE9)
+private val MarronOscuro = Color(0xFF2C1A0E)
+private val Dorado       = Color(0xFFC8922A)
+private val Rojo         = Color(0xFFD94F3D)
+private val TarjetaBg    = Color(0xFFFFF8F2)
+private val CampoFondo   = Color(0xFFEDE8DF)
+private val GrisTexto    = Color(0xFF8D8D8D)
+private val VerdePrecio  = Color(0xFF2E7D32)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,21 +43,84 @@ fun IngredientDetailScreen(
     onNavigateBack: () -> Unit,
     onAddToRecipe: () -> Unit
 ) {
-    val scrollState = rememberScrollState()
+    val preciosOrdenados = ingredient.precios.sortedBy { it.precio }
 
     Scaffold(
+        containerColor = Crema,
         topBar = {
-            TopAppBar(
-                title = { Text(ingredient.producto) },
-                navigationIcon = {
+            Surface(color = Color.White, shadowElevation = 2.dp) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            Icons.AutoMirrored.Rounded.ArrowBack,
+                            "Volver",
+                            tint = MarronOscuro
+                        )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
+                    Text(
+                        text = buildAnnotatedString {
+                            withStyle(SpanStyle(color = MarronOscuro, fontWeight = FontWeight.ExtraBold)) {
+                                append("Eco")
+                            }
+                            withStyle(SpanStyle(color = Dorado, fontWeight = FontWeight.ExtraBold)) {
+                                append("Receta")
+                            }
+                        },
+                        fontSize = 20.sp
+                    )
+                }
+            }
+        },
+        bottomBar = {
+            Surface(
+                color = MarronOscuro,
+                shadowElevation = 16.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            "MEJOR PRECIO",
+                            color = Dorado,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 1.sp
+                        )
+                        Text(
+                            "COP $${"%,.0f".format(
+                                preciosOrdenados.firstOrNull()?.precio ?: 0.0
+                            )}",
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Button(
+                        onClick = onAddToRecipe,
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Rojo),
+                        modifier = Modifier.height(48.dp)
+                    ) {
+                        Text(
+                            "Añadir a receta",
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 15.sp
+                        )
+                    }
+                }
+            }
         }
     ) { padding ->
 
@@ -50,16 +128,15 @@ fun IngredientDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(scrollState)
+                .verticalScroll(rememberScrollState())
         ) {
-            // ═══════════════════════════════════════════════════════
-            // IMAGEN DEL PRODUCTO
-            // ═══════════════════════════════════════════════════════
+
+            // ── Imagen del producto ──────────────────────────────────────
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(250.dp)
-                    .background(Color(0xFFF5F0E8))
+                    .height(260.dp)
+                    .background(CampoFondo)
             ) {
                 if (ingredient.imagenUrl.isNotEmpty()) {
                     AsyncImage(
@@ -69,283 +146,215 @@ fun IngredientDetailScreen(
                         contentScale = ContentScale.Crop
                     )
                 }
-
-                // Badge PRODUCTO LOCAL (usamos esComestible como proxy o campo real)
-                if (ingredient.esComestible) {  // ← O crea un campo "esLocal" si lo necesitas
-                    Box(
+                // Gradiente inferior
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color.Transparent, Crema),
+                                startY = 140f
+                            )
+                        )
+                )
+                // Badge PRODUCTO LOCAL
+                if (ingredient.esComestible) {
+                    Surface(
                         modifier = Modifier
-                            .padding(16.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFF2E7D32))
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
                             .align(Alignment.TopStart)
+                            .padding(16.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        color = VerdePrecio
                     ) {
                         Text(
-                            text = "PRODUCTO LOCAL",
+                            "🌿 PRODUCTO LOCAL",
                             color = Color.White,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 1.sp,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                         )
                     }
                 }
             }
 
-            // ═══════════════════════════════════════════════════════
-            // INFO PRINCIPAL
-            // ═══════════════════════════════════════════════════════
+            // ── Info principal ───────────────────────────────────────────
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp)
+                    .padding(horizontal = 20.dp)
             ) {
+                Spacer(Modifier.height(4.dp))
                 Text(
-                    text = ingredient.producto,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
+                    ingredient.producto,
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MarronOscuro
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "${ingredient.marca} · ${ingredient.categoria} · ${ingredient.tamano}${ingredient.unidad}",
+                    color = GrisTexto,
+                    fontSize = 13.sp
                 )
 
-                // Marca y categoría
-                Text(
-                    text = "${ingredient.marca} • ${ingredient.categoria}",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                // Tiendas disponibles
                 if (ingredient.tiendasDisponibles.isNotEmpty()) {
+                    Spacer(Modifier.height(6.dp))
                     Text(
-                        text = "Disponible en: ${ingredient.tiendasDisponibles.joinToString(", ")}",
+                        "Disponible en: ${ingredient.tiendasDisponibles.joinToString(", ")}",
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(top = 4.dp)
+                        color = Dorado,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Descripción (si tienes campo, si no usa producto)
+                // ── Comparativa de precios ───────────────────────────────
+                Spacer(Modifier.height(24.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(bottom = 14.dp)
+                ) {
+                    Text("📊", fontSize = 18.sp)
+                    Text(
+                        "Comparativa de Precios",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MarronOscuro
+                    )
+                }
                 Text(
-                    text = "${ingredient.producto} de la marca ${ingredient.marca}. " +
-                            "Presentación de ${ingredient.tamano}${ingredient.unidad}.",
-                    style = MaterialTheme.typography.bodyLarge
+                    "Precio por ${ingredient.unidad} en tiendas locales",
+                    color = GrisTexto,
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(bottom = 14.dp)
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                preciosOrdenados.forEachIndexed { index, precio ->
+                    TiendaPrecioCard(
+                        precio = precio,
+                        isBest = index == 0,
+                        isWorst = index == preciosOrdenados.lastIndex
+                    )
+                    Spacer(Modifier.height(10.dp))
+                }
 
-                // ═══════════════════════════════════════════════════════
-                // CARD DE PRECIO DESTACADO (el más barato)
-                // ═══════════════════════════════════════════════════════
-                val preciosOrdenados = ingredient.precios.sortedBy { it.precio }
-                val precioMasBarato = preciosOrdenados.firstOrNull()
-
-                if (precioMasBarato != null) {
+                // ── Rango de precios ─────────────────────────────────────
+                if (ingredient.precioMinimo > 0 &&
+                    ingredient.precioMaximo > ingredient.precioMinimo
+                ) {
+                    Spacer(Modifier.height(8.dp))
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFE8F5E9)
-                        )
+                        colors = CardDefaults.cardColors(containerColor = TarjetaBg)
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(20.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Column {
+                                Text("Más barato", fontSize = 12.sp, color = GrisTexto)
                                 Text(
-                                    text = "MEJOR PRECIO EN ${precioMasBarato.tienda.uppercase()}",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "COP $${"%,.0f".format(precioMasBarato.precio)} / ${ingredient.unidad}",
+                                    "COP $${"%,.0f".format(ingredient.precioMinimo)}",
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 24.sp,
-                                    color = MaterialTheme.colorScheme.primary
+                                    color = VerdePrecio,
+                                    fontSize = 16.sp
                                 )
-                                if (ingredient.precioMinimo == ingredient.precioMaximo) {
-                                    Text(
-                                        text = "Precio único en todas las tiendas",
-                                        fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
                             }
-                            Button(
-                                onClick = onAddToRecipe,
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text("Añadir a receta")
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("Más caro", fontSize = 12.sp, color = GrisTexto)
+                                Text(
+                                    "COP $${"%,.0f".format(ingredient.precioMaximo)}",
+                                    fontWeight = FontWeight.Bold,
+                                    color = Rojo,
+                                    fontSize = 16.sp
+                                )
                             }
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // ═══════════════════════════════════════════════════════
-                // COMPARATIVA DE PRECIOS POR SUPERMERCADO
-                // ═══════════════════════════════════════════════════════
-                Text(
-                    text = "Comparativa de Precios",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Text(
-                    text = "Precio por ${ingredient.unidad} en tiendas locales",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
-
-                // Lista de precios por tienda
-                preciosOrdenados.forEachIndexed { index, precio ->
-                    TiendaPrecioItem(
-                        precioFirestore = precio,
-                        isBestPrice = index == 0,
-                        isWorstPrice = index == preciosOrdenados.lastIndex
-                    )
-
-                    if (index < preciosOrdenados.lastIndex) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // ═══════════════════════════════════════════════════════
-                // RESUMEN DE RANGO DE PRECIOSA
-                // ═══════════════════════════════════════════════════════
-                if (ingredient.precioMinimo > 0 && ingredient.precioMaximo > 0 && ingredient.precioMinimo != ingredient.precioMaximo) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Text(
-                                text = "Resumen de Precios",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column {
-                                    Text("Más barato", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text(
-                                        "COP $${"%,.0f".format(ingredient.precioMinimo)}",
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text("Más caro", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text(
-                                        "COP $${"%,.0f".format(ingredient.precioMaximo)}",
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
+                Spacer(Modifier.height(24.dp))
             }
         }
     }
 }
 
-// ═════════════════════════════════════════════════════════════════
-// ITEM DE TIENDA CON PRECIO
-// ═════════════════════════════════════════════════════════════════
-
 @Composable
-private fun TiendaPrecioItem(
-    precioFirestore: PrecioTiendaFirestore,
-    isBestPrice: Boolean,
-    isWorstPrice: Boolean
+private fun TiendaPrecioCard(
+    precio: PrecioTiendaFirestore,
+    isBest: Boolean,
+    isWorst: Boolean
 ) {
-    val backgroundColor = when {
-        isBestPrice -> Color(0xFFE8F5E9)  // Verde claro
-        isWorstPrice -> Color(0xFFF5F0E8) // Crema
-        else -> MaterialTheme.colorScheme.surface
-    }
-
-    val borderColor = when {
-        isBestPrice -> MaterialTheme.colorScheme.primary
-        else -> Color.Transparent
-    }
-
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        border = if (isBestPrice) {
-            androidx.compose.foundation.BorderStroke(2.dp, borderColor)
-        } else null
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = when {
+                isBest  -> Color(0xFFE8F5E9)
+                isWorst -> TarjetaBg
+                else    -> Color.White
+            }
+        ),
+        border = if (isBest) androidx.compose.foundation.BorderStroke(
+            2.dp, Color(0xFF2E7D32)
+        ) else null,
+        elevation = CardDefaults.cardElevation(if (isBest) 4.dp else 1.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Iniciales de la tienda
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                        .size(42.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            if (isBest) Color(0xFF2E7D32).copy(0.1f)
+                            else CampoFondo
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = precioFirestore.tienda.take(2).uppercase(),
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 14.sp
+                        precio.tienda.take(2).uppercase(),
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (isBest) Color(0xFF2E7D32) else MarronOscuro,
+                        fontSize = 13.sp
                     )
                 }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
                 Column {
                     Text(
-                        text = precioFirestore.tienda,
-                        fontWeight = FontWeight.SemiBold
+                        precio.tienda,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MarronOscuro,
+                        fontSize = 14.sp
                     )
-                    if (isBestPrice) {
+                    if (isBest) {
                         Text(
-                            text = "MEJOR PRECIO",
+                            "✓ MEJOR PRECIO",
                             fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
+                            color = Color(0xFF2E7D32),
+                            fontWeight = FontWeight.ExtraBold
                         )
                     }
                 }
             }
-
-            // Precio
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = "COP $${"%,.0f".format(precioFirestore.precio)}",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = if (isBestPrice) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                )
-            }
+            Text(
+                "COP $${"%,.0f".format(precio.precio)}",
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 17.sp,
+                color = if (isBest) Color(0xFF2E7D32) else MarronOscuro
+            )
         }
     }
 }

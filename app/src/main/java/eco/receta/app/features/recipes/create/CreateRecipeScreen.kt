@@ -21,46 +21,52 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import eco.receta.app.core.components.EcoBottomNavBar
 import eco.receta.app.core.navigation.Routes
 import eco.receta.app.data.model.Visibilidad
-import eco.receta.app.ui.theme.*
+
+// ─── Paleta EcoReceta ────────────────────────────────────────────────────────
+private val Crema        = Color(0xFFF6EFE9)
+private val MarronOscuro = Color(0xFF2C1A0E)
+private val Dorado       = Color(0xFFC8922A)
+private val Rojo         = Color(0xFFD94F3D)
+private val TarjetaBg    = Color(0xFFFFF8F2)
+private val CampoFondo   = Color(0xFFEDE8DF)
+private val GrisTexto    = Color(0xFF8D8D8D)
+private val VerdeExito   = Color(0xFF2E7D32)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateRecipeScreen(
     viewModel: CreateRecipeViewModel = viewModel(),
-    navController: NavController,  // ← Solo recibir, SIN valor por defecto
+    navController: NavController,
     onNavigateToRoute: (String) -> Unit,
     onNavigateToAddIngredients: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
     val uiState = viewModel.uiState
     val scrollState = rememberScrollState()
-
-    // Launcher para seleccionar imagen de galería
-    val imagePicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let { viewModel.onImagenSelected(it) }
-    }
-
-    // Snackbar host
     val snackbarHostState = remember { SnackbarHostState() }
 
-    //detail recipe
+    val imagePicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? -> uri?.let { viewModel.onImagenSelected(it) } }
+
     val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
     LaunchedEffect(savedStateHandle) {
-        val ingrediente = savedStateHandle?.get<IngredienteSeleccionado>("ingrediente_seleccionado")
+        val ingrediente = savedStateHandle
+            ?.get<IngredienteSeleccionado>("ingrediente_seleccionado")
         ingrediente?.let {
             viewModel.addIngrediente(it)
             savedStateHandle.remove<IngredienteSeleccionado>("ingrediente_seleccionado")
@@ -69,7 +75,7 @@ fun CreateRecipeScreen(
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
-            snackbarHostState.showSnackbar("¡Receta guardada con éxito!")
+            snackbarHostState.showSnackbar("¡Receta guardada con éxito! 🎉")
             viewModel.clearSuccess()
             onNavigateBack()
         }
@@ -83,63 +89,68 @@ fun CreateRecipeScreen(
     }
 
     Scaffold(
+        containerColor = Crema,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "Crear Receta",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = VerdeBosque
-                        )
-                        Text(
-                            "Comparte el sabor de tu tierra con la comunidad",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = GrisPiedra,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = CremaClaro
-                )
-            )
+            // ── TopBar con logo EcoReceta ────────────────────────────────
+            Surface(
+                color = Color.White,
+                shadowElevation = 2.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = buildAnnotatedString {
+                            withStyle(SpanStyle(
+                                color = MarronOscuro,
+                                fontWeight = FontWeight.ExtraBold
+                            )) { append("Eco") }
+                            withStyle(SpanStyle(
+                                color = Dorado,
+                                fontWeight = FontWeight.ExtraBold
+                            )) { append("Receta") }
+                        },
+                        fontSize = 22.sp
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        text = "· Crear Receta",
+                        fontSize = 16.sp,
+                        color = GrisTexto,
+                        fontWeight = FontWeight.Normal
+                    )
+                }
+            }
         },
         bottomBar = {
-                EcoBottomNavBar(
-                    currentRoute = Routes.CREATE,
-
-                    onHomeClick = {
-                        navController.navigate(Routes.HOME) {
-                            popUpTo(Routes.CREATE) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-
-                    onExploreClick = {
-                        navController.navigate(Routes.EXPLORE) {
-                            popUpTo(Routes.CREATE) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-
-                    onCreateClick = {
-                        // Ya estamos en Crear, no hacer nada
-                    },
-
-                    onProfileClick = {
-                        navController.navigate(Routes.PROFILE) {
-                            popUpTo(Routes.CREATE) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+            EcoBottomNavBar(
+                currentRoute   = Routes.CREATE,
+                onHomeClick    = {
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.CREATE) { saveState = true }
+                        launchSingleTop = true; restoreState = true
                     }
-                )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+                },
+                onExploreClick = {
+                    navController.navigate(Routes.EXPLORE) {
+                        popUpTo(Routes.CREATE) { saveState = true }
+                        launchSingleTop = true; restoreState = true
+                    }
+                },
+                onCreateClick  = {},
+                onProfileClick = {
+                    navController.navigate(Routes.PROFILE) {
+                        popUpTo(Routes.CREATE) { saveState = true }
+                        launchSingleTop = true; restoreState = true
+                    }
+                }
+            )
+        }
     ) { padding ->
 
         Column(
@@ -147,21 +158,24 @@ fun CreateRecipeScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(scrollState)
-                .padding(horizontal = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
 
-            // ═══════════════════════════════════════════════════════
-            // 1. SUBIR FOTO DEL PLATO
-            // ═══════════════════════════════════════════════════════
+            // ── 1. FOTO DEL PLATO ────────────────────────────────────────
+            SectionLabel(icon = "📸", text = "Foto del plato")
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color(0xFFF5F0E8))
-                    .border(2.dp, Color(0xFFD4C8B0), RoundedCornerShape(16.dp))
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(CampoFondo)
+                    .border(
+                        width = 2.dp,
+                        color = if (uiState.imagenUri != null) Dorado
+                        else CampoFondo.copy(alpha = 0f),
+                        shape = RoundedCornerShape(20.dp)
+                    )
                     .clickable { imagePicker.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
@@ -172,318 +186,367 @@ fun CreateRecipeScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
+                    // Badge editar
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(10.dp),
+                        shape = RoundedCornerShape(50),
+                        color = MarronOscuro.copy(alpha = 0.8f)
+                    ) {
+                        Text(
+                            "✏️ Cambiar",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                        )
+                    }
                 } else {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         Icon(
                             imageVector = Icons.Outlined.AddPhotoAlternate,
                             contentDescription = null,
-                            tint = VerdeBosque,
-                            modifier = Modifier.size(48.dp)
+                            tint = Dorado,
+                            modifier = Modifier.size(44.dp)
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "Subir foto del plato",
-                            color = VerdeBosque,
-                            fontWeight = FontWeight.Medium
+                            "Toca para subir foto",
+                            color = MarronOscuro,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 15.sp
                         )
                         Text(
                             "INSPIRACIÓN WAYUU",
-                            color = GrisPiedra,
-                            fontSize = 12.sp
+                            color = GrisTexto,
+                            fontSize = 11.sp,
+                            letterSpacing = 1.5.sp
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // ═══════════════════════════════════════════════════════
-            // 2. NOMBRE DEL PLATO
-            // ═══════════════════════════════════════════════════════
-            OutlinedTextField(
+            // ── 2. NOMBRE DEL PLATO ──────────────────────────────────────
+            SectionLabel(icon = "🍽", text = "Nombre del plato")
+            EcoTextField(
                 value = uiState.nombre,
                 onValueChange = viewModel::onNombreChange,
-                label = { Text("Nombre del Plato") },
-                placeholder = { Text("Ej. Ajiaco Santafereño") },
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = VerdeBosque,
-                    focusedLabelColor = VerdeBosque
-                ),
-                singleLine = true
+                placeholder = "Ej: Ajiaco Santafereño",
+                leadingEmoji = "✍️"
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // ═══════════════════════════════════════════════════════
-            // 3. DESCRIPCIÓN / HISTORIA
-            // ═══════════════════════════════════════════════════════
+            // ── 3. HISTORIA / DESCRIPCIÓN ────────────────────────────────
+            SectionLabel(icon = "📖", text = "Historia o descripción")
             OutlinedTextField(
                 value = uiState.descripcion,
                 onValueChange = viewModel::onDescripcionChange,
-                label = { Text("Historia o Descripción") },
-                placeholder = { Text("Cuéntanos el secreto de esta receta...") },
+                placeholder = { Text("Cuéntanos el secreto de esta receta...", color = GrisTexto) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp),
+                    .height(110.dp),
+                shape = RoundedCornerShape(16.dp),
+                maxLines = 5,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = VerdeBosque,
-                    focusedLabelColor = VerdeBosque
-                ),
-                maxLines = 5
+                    unfocusedContainerColor = CampoFondo,
+                    focusedContainerColor   = CampoFondo,
+                    unfocusedBorderColor    = Color.Transparent,
+                    focusedBorderColor      = Dorado
+                )
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // ═══════════════════════════════════════════════════════
-            // 4. METADATOS (Tiempo, Porciones, Nivel)
-            // ═══════════════════════════════════════════════════════
+            // ── 4. METADATOS ─────────────────────────────────────────────
+            SectionLabel(icon = "⏱", text = "Detalles")
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                OutlinedTextField(
+                EcoTextField(
                     value = uiState.tiempoMinutos,
                     onValueChange = viewModel::onTiempoChange,
-                    label = { Text("Tiempo") },
-                    placeholder = { Text("45 min") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
+                    placeholder = "Tiempo (min)",
+                    leadingEmoji = "⏱",
+                    keyboardType = KeyboardType.Number,
+                    modifier = Modifier.weight(1f)
                 )
-            }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Selector de nivel
-            var expanded by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = it }
-            ) {
-                OutlinedTextField(
-                    value = uiState.nivel,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Nivel") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor()
-                )
-                ExposedDropdownMenu(
+                // Selector de nivel
+                var expanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
                     expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    onExpandedChange = { expanded = it },
+                    modifier = Modifier.weight(1f)
                 ) {
-                    listOf("Fácil", "Medio", "Difícil").forEach { nivel ->
-                        DropdownMenuItem(
-                            text = { Text(nivel) },
-                            onClick = {
-                                viewModel.onNivelChange(nivel)
-                                expanded = false
-                            }
+                    OutlinedTextField(
+                        value = uiState.nivel,
+                        onValueChange = {},
+                        readOnly = true,
+                        leadingIcon = { Text("📊", fontSize = 16.sp) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedContainerColor = CampoFondo,
+                            focusedContainerColor   = CampoFondo,
+                            unfocusedBorderColor    = Color.Transparent,
+                            focusedBorderColor      = Dorado
                         )
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        listOf("Fácil", "Medio", "Difícil").forEach { nivel ->
+                            DropdownMenuItem(
+                                text = { Text(nivel) },
+                                onClick = { viewModel.onNivelChange(nivel); expanded = false }
+                            )
+                        }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // ═══════════════════════════════════════════════════════
-            // 5. INGREDIENTES
-            // ═══════════════════════════════════════════════════════
+            // ── 5. INGREDIENTES ──────────────────────────────────────────
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "Ingredientes",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = VerdeBosque
-                )
+                SectionLabel(icon = "🧺", text = "Ingredientes")
                 Button(
                     onClick = onNavigateToAddIngredients,
-                    colors = ButtonDefaults.buttonColors(containerColor = VerdeBosque)
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(containerColor = MarronOscuro),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Añadir")
+                    Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Añadir", fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Lista de ingredientes seleccionados
             if (uiState.ingredientesSeleccionados.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(80.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFFF5F0E8)),
+                        .height(72.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(CampoFondo),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         "Aún no has añadido ingredientes",
-                        color = GrisPiedra,
-                        style = MaterialTheme.typography.bodyMedium
+                        color = GrisTexto,
+                        fontSize = 14.sp
                     )
                 }
             } else {
                 val costoTotal = uiState.ingredientesSeleccionados.sumOf { it.precio }
-
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     uiState.ingredientesSeleccionados.forEach { ing ->
-                        IngredienteSeleccionadoCard(
+                        IngredienteCard(
                             ingrediente = ing,
                             onRemove = { viewModel.removeIngrediente(ing.productoId) }
                         )
                     }
-
-                    // Costo total de ingredientes
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    Row(
+                    // Costo total
+                    Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        shape = RoundedCornerShape(16.dp),
+                        color = MarronOscuro
                     ) {
-                        Text(
-                            "Costo Total Ingredientes",
-                            fontWeight = FontWeight.Bold,
-                            color = GrisPiedra
-                        )
-                        Text(
-                            "COP $${"%,.0f".format(costoTotal)}",
-                            fontWeight = FontWeight.Bold,
-                            color = VerdeBosque
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 14.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("🛒", fontSize = 18.sp)
+                                Spacer(Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        "COSTO TOTAL",
+                                        color = Dorado,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        letterSpacing = 1.sp
+                                    )
+                                    Text(
+                                        "COP $${"%,.0f".format(costoTotal)}",
+                                        color = Color.White,
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.ExtraBold
+                                    )
+                                }
+                            }
+                            Text(
+                                "${uiState.ingredientesSeleccionados.size} items",
+                                color = Color.White.copy(0.6f),
+                                fontSize = 13.sp
+                            )
+                        }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // ═══════════════════════════════════════════════════════
-            // 6. TOGGLE PÚBLICO / PRIVADO
-            // ═══════════════════════════════════════════════════════
-            Text(
-                "¿Hacer pública o privada la receta?",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = VerdeBosque,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
+            // ── 6. VISIBILIDAD ───────────────────────────────────────────
+            SectionLabel(icon = "👁", text = "¿Quién puede ver esta receta?")
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Color(0xFFE8E0D5))
-                    .padding(4.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                VisibilidadToggleButton(
-                    text = "PÚBLICA",
+                VisibilidadOpcion(
+                    emoji = "🌍",
+                    titulo = "Pública",
+                    descripcion = "Todos pueden verla",
                     isSelected = uiState.visibilidad == Visibilidad.PUBLICA,
                     onClick = { viewModel.onVisibilidadChange(Visibilidad.PUBLICA) },
                     modifier = Modifier.weight(1f)
                 )
-                VisibilidadToggleButton(
-                    text = "PRIVADA",
+                VisibilidadOpcion(
+                    emoji = "🔒",
+                    titulo = "Privada",
+                    descripcion = "Solo tú la ves",
                     isSelected = uiState.visibilidad == Visibilidad.PRIVADA,
                     onClick = { viewModel.onVisibilidadChange(Visibilidad.PRIVADA) },
                     modifier = Modifier.weight(1f)
                 )
             }
 
-            Text(
-                text = when (uiState.visibilidad) {
-                    Visibilidad.PUBLICA -> "Todos en la comunidad podrán ver esta receta"
-                    Visibilidad.PRIVADA -> "Solo tú podrás ver esta receta en tu perfil"
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = GrisPiedra,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // ═══════════════════════════════════════════════════════
-            // 7. BOTÓN GUARDAR RECETA
-            // ═══════════════════════════════════════════════════════
+            // ── 7. GUARDAR ───────────────────────────────────────────────
+            Spacer(Modifier.height(4.dp))
             Button(
-                    onClick = { viewModel.guardarReceta() },
+                onClick = { viewModel.guardarReceta() },
+                enabled = !uiState.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = VerdeBosque),
-                enabled = !uiState.isLoading
+                    .height(58.dp),
+                shape = RoundedCornerShape(18.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Rojo)
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
                         color = Color.White,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.5.dp
                     )
                 } else {
-                    Icon(Icons.Default.Save, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(Icons.Default.Save, null, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(10.dp))
                     Text(
                         "Guardar Receta",
                         fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.ExtraBold
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(Modifier.height(8.dp))
         }
     }
 }
 
-// ═════════════════════════════════════════════════════════════════
-// COMPONENTES AUXILIARES
-// ═════════════════════════════════════════════════════════════════
+// ─── Componentes auxiliares ───────────────────────────────────────────────────
 
 @Composable
-private fun VisibilidadToggleButton(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .fillMaxHeight()
-            .clip(RoundedCornerShape(20.dp))
-            .background(if (isSelected) VerdeBosque else Color.Transparent)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
+private fun SectionLabel(icon: String, text: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
+        Text(icon, fontSize = 16.sp)
         Text(
-            text = text,
-            color = if (isSelected) Color.White else GrisPiedra,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-            fontSize = 14.sp
+            text,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            color = MarronOscuro
         )
     }
 }
 
 @Composable
-private fun IngredienteSeleccionadoCard(
+private fun EcoTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    leadingEmoji: String,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    modifier: Modifier = Modifier.fillMaxWidth()
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        placeholder = { Text(placeholder, color = GrisTexto, fontSize = 14.sp) },
+        leadingIcon = { Text(leadingEmoji, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp)) },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            unfocusedContainerColor = CampoFondo,
+            focusedContainerColor   = CampoFondo,
+            unfocusedBorderColor    = Color.Transparent,
+            focusedBorderColor      = Dorado
+        )
+    )
+}
+
+@Composable
+private fun VisibilidadOpcion(
+    emoji: String,
+    titulo: String,
+    descripcion: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        color = if (isSelected) MarronOscuro else CampoFondo,
+        border = if (isSelected) null
+        else androidx.compose.foundation.BorderStroke(
+            1.5.dp, CampoFondo
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(emoji, fontSize = 22.sp)
+            Text(
+                titulo,
+                fontWeight = FontWeight.Bold,
+                color = if (isSelected) Color.White else MarronOscuro,
+                fontSize = 14.sp
+            )
+            Text(
+                descripcion,
+                color = if (isSelected) Color.White.copy(0.7f) else GrisTexto,
+                fontSize = 11.sp,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+private fun IngredienteCard(
     ingrediente: IngredienteSeleccionado,
     onRemove: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F0E8))
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = TarjetaBg),
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Row(
             modifier = Modifier
@@ -492,29 +555,51 @@ private fun IngredienteSeleccionadoCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    ingrediente.nombre,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF3D3D3D)
-                )
-                Text(
-                    "${ingrediente.cantidad} ${ingrediente.unidad}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GrisPiedra
-                )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(CampoFondo),
+                    contentAlignment = Alignment.Center
+                ) { Text("🥬", fontSize = 18.sp) }
+                Column {
+                    Text(
+                        ingrediente.nombre,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MarronOscuro,
+                        fontSize = 14.sp
+                    )
+                    Text(
+                        "${ingrediente.cantidad} ${ingrediente.unidad}",
+                        color = GrisTexto,
+                        fontSize = 12.sp
+                    )
+                }
             }
-            Column(horizontalAlignment = Alignment.End) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 Text(
                     "COP $${"%,.0f".format(ingrediente.precio)}",
                     fontWeight = FontWeight.Bold,
-                    color = VerdeBosque
+                    color = Dorado,
+                    fontSize = 13.sp
                 )
-                TextButton(
+                IconButton(
                     onClick = onRemove,
-                    colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFD32F2F))
+                    modifier = Modifier.size(28.dp)
                 ) {
-                    Text("Eliminar", fontSize = 12.sp)
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Eliminar",
+                        tint = Rojo,
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
             }
         }

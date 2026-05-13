@@ -12,18 +12,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.ExitToApp
 import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -32,13 +36,20 @@ import coil.compose.AsyncImage
 import eco.receta.app.core.components.EcoBottomNavBar
 import eco.receta.app.core.navigation.Routes
 import eco.receta.app.data.model.Recipe
-import eco.receta.app.ui.theme.*
 
+// ─── Paleta EcoReceta ────────────────────────────────────────────────────────
+private val Crema        = Color(0xFFF6EFE9)
+private val MarronOscuro = Color(0xFF2C1A0E)
+private val Dorado       = Color(0xFFC8922A)
+private val Rojo         = Color(0xFFD94F3D)
+private val TarjetaBg    = Color(0xFFFFF8F2)
+private val CampoFondo   = Color(0xFFEDE8DF)
+private val GrisTexto    = Color(0xFF8D8D8D)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    navController: NavController,  // ← Ya lo recibes
+    navController: NavController,
     viewModel: ProfileViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -46,49 +57,62 @@ fun ProfileScreen(
     var showLogoutDialog by remember { mutableStateOf(false) }
 
     Scaffold(
+        containerColor = Crema,
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
+            Surface(color = Color.White, shadowElevation = 2.dp) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Logo EcoReceta
                     Text(
-                        "EcoReceta",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = VerdeBosque
+                        text = buildAnnotatedString {
+                            withStyle(SpanStyle(
+                                color = MarronOscuro,
+                                fontWeight = FontWeight.ExtraBold
+                            )) { append("Eco") }
+                            withStyle(SpanStyle(
+                                color = Dorado,
+                                fontWeight = FontWeight.ExtraBold
+                            )) { append("Receta") }
+                        },
+                        fontSize = 22.sp
                     )
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = CremaClaro
-                )
-            )
+                    IconButton(onClick = { showLogoutDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Outlined.ExitToApp,
+                            contentDescription = "Cerrar sesión",
+                            tint = Rojo
+                        )
+                    }
+                }
+            }
         },
         bottomBar = {
             EcoBottomNavBar(
-                currentRoute = Routes.PROFILE,
-
-                onHomeClick = {
+                currentRoute   = Routes.PROFILE,
+                onHomeClick    = {
                     navController.navigate(Routes.HOME) {
-                        popUpTo(Routes.CREATE) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
+                        popUpTo(Routes.PROFILE) { saveState = true }
+                        launchSingleTop = true; restoreState = true
                     }
                 },
-
                 onExploreClick = {
                     navController.navigate(Routes.EXPLORE) {
-                        popUpTo(Routes.CREATE) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
+                        popUpTo(Routes.PROFILE) { saveState = true }
+                        launchSingleTop = true; restoreState = true
                     }
                 },
-
-                onCreateClick = {
-                    navController.navigate(Routes.CREATE){
-                        popUpTo(Routes.CREATE) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
+                onCreateClick  = {
+                    navController.navigate(Routes.CREATE) {
+                        popUpTo(Routes.PROFILE) { saveState = true }
+                        launchSingleTop = true; restoreState = true
                     }
                 },
-
                 onProfileClick = {}
             )
         }
@@ -96,22 +120,17 @@ fun ProfileScreen(
 
         if (uiState.isLoading) {
             Box(
-                modifier = Modifier.fillMaxSize(),
+                Modifier.fillMaxSize().padding(padding),
                 contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = VerdeBosque)
-            }
+            ) { CircularProgressIndicator(color = Dorado) }
             return@Scaffold
         }
 
-        val user = uiState.user
-        if (user == null) {
+        val user = uiState.user ?: run {
             Box(
-                modifier = Modifier.fillMaxSize(),
+                Modifier.fillMaxSize().padding(padding),
                 contentAlignment = Alignment.Center
-            ) {
-                Text("Error cargando perfil", color = GrisPiedra)
-            }
+            ) { Text("Error cargando perfil", color = Rojo) }
             return@Scaffold
         }
 
@@ -119,176 +138,250 @@ fun ProfileScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(scrollState)
-                .padding(horizontal = 20.dp),
+                .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
 
-            // ═══════════════════════════════════════════════════════
-            // 1. AVATAR (dinámico: foto de Google o placeholder)
-            // ═══════════════════════════════════════════════════════
+            // ── HERO: Avatar + nombre + badge ────────────────────────────
             Box(
                 modifier = Modifier
-                    .size(100.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFE8E0D5)),
+                    .fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.White, Crema)
+                        )
+                    )
+                    .padding(vertical = 28.dp),
                 contentAlignment = Alignment.Center
             ) {
-                if (user.fotoUrl.isNotEmpty()) {
-                    AsyncImage(
-                        model = user.fotoUrl,
-                        contentDescription = "Foto de perfil",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Avatar con borde dorado
+                    Box(
+                        modifier = Modifier
+                            .size(96.dp)
+                            .clip(CircleShape)
+                            .background(
+                                Brush.linearGradient(listOf(Dorado, MarronOscuro))
+                            )
+                            .padding(3.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                                .background(CampoFondo),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (user.fotoUrl.isNotEmpty()) {
+                                AsyncImage(
+                                    model = user.fotoUrl,
+                                    contentDescription = "Foto",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Default.Person,
+                                    null,
+                                    tint = MarronOscuro,
+                                    modifier = Modifier.size(44.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Text(
+                        user.nombreCompleto,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MarronOscuro,
+                        textAlign = TextAlign.Center
                     )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = null,
-                        tint = VerdeBosque,
-                        modifier = Modifier.size(48.dp)
-                    )
+
+                    // Badge con fondo coloreado
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = getBadgeBackgroundColor(user.badgeActual)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        ) {
+                            Icon(
+                                Icons.Outlined.EmojiEvents,
+                                null,
+                                tint = getBadgeTextColor(user.badgeActual),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                user.badgeActual.uppercase(),
+                                color = getBadgeTextColor(user.badgeActual),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = 1.5.sp
+                            )
+                        }
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // ═══════════════════════════════════════════════════════
-            // 2. NOMBRE Y BADGE REALES (reemplaza lo estático del Figma)
-            // ═══════════════════════════════════════════════════════
-            Text(
-                text = user.nombreCompleto,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF3D3D3D),
-                textAlign = TextAlign.Center
-            )
-
-            // Badge con ícono de trofeo
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.padding(top = 4.dp)
+            // ── STATS CARD ───────────────────────────────────────────────
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MarronOscuro),
+                elevation = CardDefaults.cardElevation(8.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.EmojiEvents,
-                    contentDescription = null,
-                    tint = getBadgeColor(user.badgeActual),
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = user.badgeActual,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = getBadgeColor(user.badgeActual),
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                user.recetasCreadas.toString(),
+                                fontSize = 48.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White,
+                                lineHeight = 52.sp
+                            )
+                            Text(
+                                "RECETAS CREADAS",
+                                color = Dorado,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = 1.5.sp
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color.White.copy(0.1f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("🏆", fontSize = 28.sp)
+                        }
+                    }
+
+                    if (uiState.recetasParaSiguienteRango > 0) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    "Hacia: ${uiState.proximoBadge}",
+                                    color = Color.White.copy(0.8f),
+                                    fontSize = 13.sp
+                                )
+                                Text(
+                                    "${uiState.recetasParaSiguienteRango} más",
+                                    color = Dorado,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            val progreso by animateFloatAsState(
+                                uiState.progresoRango, label = "progress"
+                            )
+                            LinearProgressIndicator(
+                                progress = { progreso },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(8.dp)
+                                    .clip(RoundedCornerShape(4.dp)),
+                                color = Dorado,
+                                trackColor = Color.White.copy(0.2f)
+                            )
+                        }
+                    } else {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Dorado.copy(0.2f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text("⭐", fontSize = 14.sp)
+                                Text(
+                                    "¡Rango máximo alcanzado!",
+                                    color = Dorado,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // ═══════════════════════════════════════════════════════
-            // 3. CARD DE STATS CON CONTADOR REAL Y PROGRESO
-            // ═══════════════════════════════════════════════════════
-            StatsCard(
-                recetasCreadas = user.recetasCreadas,
-                badgeActual = user.badgeActual,
-                proximoBadge = uiState.proximoBadge,
-                recetasFaltantes = uiState.recetasParaSiguienteRango,
-                progreso = uiState.progresoRango
-            )
-
-            Spacer(modifier = Modifier.height(28.dp))
-
-            // ═══════════════════════════════════════════════════════
-            // 4. MIS CREACIONES
-            // ═══════════════════════════════════════════════════════
+            // ── MIS CREACIONES ───────────────────────────────────────────
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     "Mis Creaciones",
-                    style = MaterialTheme.typography.titleLarge,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF3D3D3D)
+                    color = MarronOscuro
                 )
-                TextButton(
-                    onClick = {
-                        navController.navigate("${Routes.EXPLORE}?filter=mis_recetas")
-                    },
-                    colors = ButtonDefaults.textButtonColors(contentColor = VerdeBosque)
-                ) {
-                    Text("Ver todas", fontWeight = FontWeight.SemiBold)
+                TextButton(onClick = {
+                    navController.navigate("${Routes.EXPLORE}?filter=mis_recetas")
+                }) {
+                    Text("Ver todas", color = Dorado, fontWeight = FontWeight.SemiBold)
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
             val todasLasRecetas = uiState.recetasPublicas + uiState.recetasPrivadas
-
             if (todasLasRecetas.isEmpty()) {
-                EmptyRecipesState()
+                EmptyRecipesState(
+                    onCreateClick = { navController.navigate(Routes.CREATE) }
+                )
             } else {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(horizontal = 20.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     items(uiState.recetasPublicas) { recipe ->
-                        MiRecetaCard(
+                        RecetaCard(
                             recipe = recipe,
-                            badge = "COMUNIDAD",
-                            onClick = {
-                                navController.navigate("recipe_detail/${recipe.id}")
-                            }
+                            badge = "🌍 PÚBLICA",
+                            badgeColor = Dorado,
+                            onClick = { navController.navigate("recipe_detail/${recipe.id}") }
                         )
                     }
                     items(uiState.recetasPrivadas) { recipe ->
-                        MiRecetaCard(
+                        RecetaCard(
                             recipe = recipe,
-                            badge = "PRIVADA",
-                            badgeColor = Color(0xFF8D6E63),
-                            onClick = {
-                                navController.navigate("recipe_detail/${recipe.id}")
-                            }
+                            badge = "🔒 PRIVADA",
+                            badgeColor = MarronOscuro,
+                            onClick = { navController.navigate("recipe_detail/${recipe.id}") }
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // ═══════════════════════════════════════════════════════
-            // 5. CERRAR SESIÓN
-            // ═══════════════════════════════════════════════════════
-            OutlinedButton(
-                onClick = { showLogoutDialog = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color(0xFFD32F2F)
-                ),
-                border = ButtonDefaults.outlinedButtonBorder.copy(
-                    brush = androidx.compose.ui.graphics.SolidColor(Color(0xFFD32F2F))
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.ExitToApp,
-                    contentDescription = null
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    "Cerrar Sesión",
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(Modifier.height(32.dp))
         }
     }
 
@@ -296,10 +389,23 @@ fun ProfileScreen(
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
-            title = { Text("¿Cerrar sesión?") },
-            text = { Text("¿Estás seguro de que deseas salir de tu despensa?") },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(24.dp),
+            title = {
+                Text(
+                    "¿Cerrar sesión?",
+                    fontWeight = FontWeight.Bold,
+                    color = MarronOscuro
+                )
+            },
+            text = {
+                Text(
+                    "¿Estás seguro? Tendrás que volver a iniciar sesión para acceder a tu despensa.",
+                    color = GrisTexto
+                )
+            },
             confirmButton = {
-                TextButton(
+                Button(
                     onClick = {
                         viewModel.logout()
                         showLogoutDialog = false
@@ -307,224 +413,107 @@ fun ProfileScreen(
                             popUpTo(0) { inclusive = true }
                         }
                     },
-                    colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFD32F2F))
-                ) {
-                    Text("Cerrar sesión")
-                }
+                    colors = ButtonDefaults.buttonColors(containerColor = Rojo),
+                    shape = RoundedCornerShape(12.dp)
+                ) { Text("Cerrar sesión", fontWeight = FontWeight.Bold) }
             },
             dismissButton = {
-                TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("Cancelar")
-                }
+                OutlinedButton(
+                    onClick = { showLogoutDialog = false },
+                    shape = RoundedCornerShape(12.dp)
+                ) { Text("Cancelar") }
             }
         )
     }
 }
 
-// ═════════════════════════════════════════════════════════════════
-// COMPONENTES ESPECÍFICOS DE STATS Y BADGES
-// ═════════════════════════════════════════════════════════════════
+// ─── Componentes ──────────────────────────────────────────────────────────────
 
 @Composable
-private fun StatsCard(
-    recetasCreadas: Int,
-    badgeActual: String,
-    proximoBadge: String,
-    recetasFaltantes: Int,
-    progreso: Float
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = VerdeBosque),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
-        ) {
-            // Fila superior: Número grande + info del badge
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = recetasCreadas.toString(),
-                        style = MaterialTheme.typography.displaySmall,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        lineHeight = 40.sp
-                    )
-                    Text(
-                        text = "RECETAS CREADAS",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color.White.copy(alpha = 0.8f),
-                        letterSpacing = 1.5.sp
-                    )
-                }
-
-                // Badge actual con fondo destacado
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color.White.copy(alpha = 0.15f))
-                        .padding(horizontal = 14.dp, vertical = 10.dp)
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Outlined.EmojiEvents,
-                            contentDescription = null,
-                            tint = Color(0xFFFFD700),
-                            modifier = Modifier.size(28.dp)
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = badgeActual.uppercase(),
-                            color = Color.White,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Barra de progreso hacia siguiente rango
-            if (recetasFaltantes > 0) {
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Progreso hacia $proximoBadge",
-                            color = Color.White.copy(alpha = 0.9f),
-                            fontSize = 13.sp
-                        )
-                        Text(
-                            text = "$recetasFaltantes recetas más",
-                            color = Color(0xFFFFD700),
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // ProgressBar animada
-                    val animatedProgress by animateFloatAsState(
-                        targetValue = progreso,
-                        label = "progress"
-                    )
-
-                    LinearProgressIndicator(
-                        progress = { animatedProgress },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = Color(0xFFFFD700),
-                        trackColor = Color.White.copy(alpha = 0.2f),
-                    )
-                }
-            } else {
-                // Usuario en rango máximo
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFFFD700).copy(alpha = 0.2f))
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = null,
-                        tint = Color(0xFFFFD700),
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "¡Has alcanzado el rango máximo!",
-                        color = Color(0xFFFFD700),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
-        }
-    }
-}
-
-// ═════════════════════════════════════════════════════════════════
-// COLORES DE BADGES
-// ═════════════════════════════════════════════════════════════════
-@Composable
-private fun getBadgeColor(badge: String): Color = when (badge) {
-    "Chef Novato" -> Color(0xFF8D6E63)
-    "Cocinero Aficionado" -> Color(0xFF4CAF50)
-    "Maestro Culinario" -> Color(0xFFFFD700)
-    else -> VerdeBosque
+private fun getBadgeBackgroundColor(badge: String): Color = when (badge) {
+    "Chef Novato"         -> Color(0xFFF5E6D0)
+    "Cocinero Aficionado" -> Color(0xFFE8F5E9)
+    "Maestro Culinario"   -> Color(0xFFFFF9C4)
+    else -> CampoFondo
 }
 
 @Composable
-private fun EmptyRecipesState() {
-    Box(
+private fun getBadgeTextColor(badge: String): Color = when (badge) {
+    "Chef Novato"         -> Color(0xFF8B5E3C)
+    "Cocinero Aficionado" -> Color(0xFF2E7D32)
+    "Maestro Culinario"   -> Color(0xFFF57F17)
+    else -> MarronOscuro
+}
+
+@Composable
+private fun EmptyRecipesState(onCreateClick: () -> Unit) {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(150.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFFF5F0E8)),
-        contentAlignment = Alignment.Center
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                imageVector = Icons.Default.Restaurant,
-                contentDescription = null,
-                tint = GrisPiedra,
-                modifier = Modifier.size(32.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                "Aún no has creado recetas",
-                color = GrisPiedra
-            )
-            Text(
-                "¡Ve a CREAR y comparte tu primer plato!",
-                color = GrisPiedra,
-                style = MaterialTheme.typography.bodySmall
-            )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(130.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(TarjetaBg),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text("🍳", fontSize = 32.sp)
+                Text(
+                    "Aún no has creado recetas",
+                    color = GrisTexto,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    "¡Comparte tu primer plato con la comunidad!",
+                    color = GrisTexto,
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+        Button(
+            onClick = onCreateClick,
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Rojo)
+        ) {
+            Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+            Text("Crear mi primera receta", fontWeight = FontWeight.Bold)
         }
     }
 }
 
 @Composable
-private fun MiRecetaCard(
+private fun RecetaCard(
     recipe: Recipe,
     badge: String,
-    badgeColor: Color = VerdeBosque,
+    badgeColor: Color,
     onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
-            .width(160.dp)
+            .width(155.dp)
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = TarjetaBg),
+        elevation = CardDefaults.cardElevation(3.dp)
     ) {
         Column {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(100.dp)
-                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                    .background(Color(0xFFF5F0E8))
+                    .height(105.dp)
+                    .clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp))
+                    .background(CampoFondo)
             ) {
                 if (recipe.imageUrl.isNotEmpty()) {
                     AsyncImage(
@@ -534,52 +523,49 @@ private fun MiRecetaCard(
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    Icon(
-                        imageVector = Icons.Default.Restaurant,
-                        contentDescription = null,
-                        tint = GrisPiedra,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    Box(Modifier.fillMaxSize(), Alignment.Center) {
+                        Text("🍽", fontSize = 28.sp)
+                    }
                 }
-
-                Box(
+                Surface(
                     modifier = Modifier
-                        .padding(8.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(badgeColor.copy(alpha = 0.9f))
                         .align(Alignment.TopStart)
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .padding(8.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    color = badgeColor.copy(0.9f)
                 ) {
                     Text(
                         badge,
                         color = Color.White,
-                        fontSize = 10.sp,
+                        fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                     )
                 }
             }
-
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
-                    text = recipe.nombre,
+                    recipe.nombre,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF3D3D3D),
+                    color = MarronOscuro,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    fontSize = 13.sp
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = if (recipe.tiempoMinutos > 0) "${recipe.tiempoMinutos} min" else "—",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GrisPiedra
-                )
+                Spacer(Modifier.height(3.dp))
+                if (recipe.tiempoMinutos > 0) {
+                    Text(
+                        "⏱ ${recipe.tiempoMinutos} min",
+                        color = GrisTexto,
+                        fontSize = 11.sp
+                    )
+                }
                 if (recipe.costoTotal > 0) {
                     Text(
-                        text = "COP $${"%,.0f".format(recipe.costoTotal)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = VerdeBosque
+                        "COP $${"%,.0f".format(recipe.costoTotal)}",
+                        fontWeight = FontWeight.Bold,
+                        color = Dorado,
+                        fontSize = 12.sp
                     )
                 }
             }
