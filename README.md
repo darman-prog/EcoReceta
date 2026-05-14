@@ -58,3 +58,16 @@ falta seguir construyendo el resto de la app y sus screens*
 
 *termine toda la navegacion entre screens y ademas pude hacer que se vean los ingredientes de diferentes supermercados pero falta mejorar las categorias y falta mejorar  lo que es solo los detalles de los ingredientes por que algunos se estan cargando de manera erronea como son las imagenes
 toca mirar bien que se carguen las imagenes con el coil y tambien que se carguen todos los productos pero en sus diferentes categorias y sacar las categorias y poder crear una receta*
+
+*by Diego Meza.*
+
+# Feature 8 y 9 y 10
+
+14/05/2026
+
+
+*se aplicaron cambios para cambiar las categorias de diferentes productos y ademas se arreglo el error de la lista de ingredientes y agregamos debugs y tambien usamos la libre gson para recibir los productos y refactorizarlos para que sean leibles para kotlin y tambien cambiamos iconos y realizamos pruebas de funcionamiento y fueron exitosas
+cambiamos interfaces y falta agregar algunos detalles tipo pantallas de cargas o arreglar algunas cosas de ingredientes pero por ahroa esta aplicacion cumple con las expectativas*
+
+
+*by Diego Meza.*
