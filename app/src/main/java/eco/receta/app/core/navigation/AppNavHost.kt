@@ -1,9 +1,9 @@
 package eco.receta.app.core.navigation
 
+
+import android.util.Log
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +33,8 @@ import eco.receta.app.features.profile.ProfileScreen
 import eco.receta.app.features.recipes.create.CreateRecipeScreen
 import eco.receta.app.features.recipes.create.IngredienteSeleccionado
 import eco.receta.app.features.recipes.detail.RecipeDetailScreen
+import com.google.gson.Gson
+import eco.receta.app.features.recipes.create.CreateRecipeViewModel
 
 
 @Composable
@@ -112,26 +114,6 @@ fun AppNavHost(
             )
         }
 
-        composable(Routes.CREATE) {
-            CreateRecipeScreen(
-                navController = navController,
-                onNavigateToRoute = { route ->
-                    navController.navigate(route) {
-                        popUpTo(Routes.CREATE) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                // Ir a buscar ingredientes
-                onNavigateToAddIngredients = {
-                    navController.navigate(Routes.INGREDIENT_LIST)
-                },
-                // Volver atrás después de guardar
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
         // ═══════════════════════════════════════════════════════════
         // PROFILE — PERFIL CON STATS Y BADGES (COMPLETO)
         // ═══════════════════════════════════════════════════════════
@@ -145,9 +127,10 @@ fun AppNavHost(
                 navController = navController,
                 onNavigateBack = { navController.popBackStack() },
                 onIngredientSelected = { ingrediente ->
+                    val json = Gson().toJson(ingrediente)
                     navController.previousBackStackEntry
                         ?.savedStateHandle
-                        ?.set("ingrediente_seleccionado", ingrediente)
+                        ?.set("ingrediente_seleccionado", json)  // guarda como String
                     navController.popBackStack()
                 }
             )
@@ -156,7 +139,52 @@ fun AppNavHost(
         // ═══════════════════════════════════════════════════════════
         // NUEVO: Detalle de ingrediente
         // ═══════════════════════════════════════════════════════════
-        composable("ingredient_detail/{ingredientId}") { backStackEntry ->
+        composable(Routes.CREATE) { backStackEntry ->
+            val viewModel: CreateRecipeViewModel = viewModel()
+
+            // 🔍 LOG 5: Verificar que se lee el JSON
+            val keys = backStackEntry.savedStateHandle.keys()
+            Log.d("FLUJO", "5. CREATE keys: $keys")
+
+            val json = backStackEntry.savedStateHandle.get<String>("ingrediente_seleccionado")
+            Log.d("FLUJO", "6. JSON leído: $json")
+
+            json?.let {
+                try {
+                    val ingrediente = Gson().fromJson(it, IngredienteSeleccionado::class.java)
+                    Log.d("FLUJO", "7. Ingrediente parseado: ${ingrediente.nombre}")
+
+                    viewModel.addIngrediente(ingrediente)
+                    Log.d("FLUJO", "8. Llamado addIngrediente")
+
+                    backStackEntry.savedStateHandle.remove<String>("ingrediente_seleccionado")
+                    Log.d("FLUJO", "9. Limpiado savedStateHandle")
+                } catch (e: Exception) {
+                    Log.e("FLUJO", "ERROR parseando: ${e.message}")
+                    e.printStackTrace()
+                }
+            }
+
+            CreateRecipeScreen(
+                viewModel = viewModel,
+                navController = navController,
+                onNavigateToRoute = { route ->
+                    navController.navigate(route) {
+                        popUpTo(Routes.CREATE) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateToAddIngredients = {
+                    navController.navigate(Routes.INGREDIENT_LIST)
+                },
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable("${Routes.INGREDIENT_DETAIL}/{ingredientId}") { backStackEntry ->
             val ingredientId = backStackEntry.arguments?.getString("ingredientId") ?: ""
             val ingredientViewModel: IngredientViewModel = viewModel()
 
@@ -171,28 +199,51 @@ fun AppNavHost(
             }
 
             when {
-                isLoading -> { /* loading */ }
-                ingredient == null -> { /* error */ }
+                isLoading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+                ingredient == null -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Ingrediente no encontrado")
+                    }
+                }
                 else -> {
                     IngredientDetailScreen(
                         ingredient = ingredient!!,
                         onNavigateBack = { navController.popBackStack() },
-                        onAddToRecipe = {
-                            // Crear aquí en el NavHost
-                            ingredient?.let { ing ->  // ← 'ing' es garantizado no-null aquí
-                                val precioMasBarato = ing.precios.minOfOrNull { it.precio } ?: 0.0
-                                val seleccionado = IngredienteSeleccionado(
-                                    productoId = ing.id,
-                                    nombre = ing.producto,
-                                    precio = precioMasBarato,
-                                    cantidad = "${ing.tamaño} ${ing.unidad}",
-                                    unidad = ing.unidad
-                                )
-                                navController.previousBackStackEntry
-                                    ?.savedStateHandle
-                                    ?.set("ingrediente_seleccionado", seleccionado)
-                                navController.popBackStack()
-                            }
+                        onAddToRecipe = { ing ->  // ← RECIBE Ingredient aquí
+                            val precioMasBarato = ing.precios.minOfOrNull { it.precio } ?: 0.0
+
+                            val seleccionado = IngredienteSeleccionado(
+                                productoId = ing.id,
+                                nombre = ing.producto,
+                                precio = precioMasBarato,
+                                cantidad = "${ing.tamaño} ${ing.unidad}",
+                                unidad = ing.unidad
+                            )
+
+                            val json = Gson().toJson(seleccionado)
+
+
+                            Log.d("FLUJO", "1. JSON creado: $json")
+                            Log.d("FLUJO", "1. Ingrediente: ${seleccionado.nombre}")
+
+                            val previousEntry = navController.previousBackStackEntry
+                            Log.d("FLUJO", "2. Previous entry: ${previousEntry?.destination?.route}")
+
+                            previousEntry?.savedStateHandle?.set("ingrediente_seleccionado", json)
+                            Log.d("FLUJO", "3. Guardado en savedStateHandle")
+
+                            navController.popBackStack()
+                            Log.d("FLUJO", "4. popBackStack ejecutado")
+
+                            navController.previousBackStackEntry
+                                ?.savedStateHandle
+                                ?.set("ingrediente_seleccionado", json)
+
+                            navController.popBackStack()
                         }
                     )
                 }

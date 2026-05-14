@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.AddPhotoAlternate
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,9 +30,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.google.gson.Gson
 import eco.receta.app.core.components.EcoBottomNavBar
 import eco.receta.app.core.navigation.Routes
 import eco.receta.app.data.model.Visibilidad
@@ -63,15 +66,6 @@ fun CreateRecipeScreen(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? -> uri?.let { viewModel.onImagenSelected(it) } }
 
-    val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
-    LaunchedEffect(savedStateHandle) {
-        val ingrediente = savedStateHandle
-            ?.get<IngredienteSeleccionado>("ingrediente_seleccionado")
-        ingrediente?.let {
-            viewModel.addIngrediente(it)
-            savedStateHandle.remove<IngredienteSeleccionado>("ingrediente_seleccionado")
-        }
-    }
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
@@ -565,7 +559,7 @@ private fun IngredienteCard(
                         .clip(RoundedCornerShape(10.dp))
                         .background(CampoFondo),
                     contentAlignment = Alignment.Center
-                ) { Text("🥬", fontSize = 18.sp) }
+                ) { Text("🍴", fontSize = 18.sp) }
                 Column {
                     Text(
                         ingrediente.nombre,

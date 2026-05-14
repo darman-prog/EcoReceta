@@ -41,7 +41,7 @@ private val VerdePrecio  = Color(0xFF2E7D32)
 fun IngredientDetailScreen(
     ingredient: Ingredient,
     onNavigateBack: () -> Unit,
-    onAddToRecipe: () -> Unit
+    onAddToRecipe: (Ingredient) -> Unit  // ← AHORA RECIBE Ingredient
 ) {
     val preciosOrdenados = ingredient.precios.sortedBy { it.precio }
 
@@ -108,7 +108,7 @@ fun IngredientDetailScreen(
                         )
                     }
                     Button(
-                        onClick = onAddToRecipe,
+                        onClick = { onAddToRecipe(ingredient) },  // ← PASAR ingredient
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Rojo),
                         modifier = Modifier.height(48.dp)

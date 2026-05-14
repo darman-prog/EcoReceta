@@ -63,7 +63,9 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.firebase.firestore)
     //autenticacion Google
-
+    implementation("com.google.code.gson:gson:2.11.0")
+    implementation("androidx.compose.runtime:runtime-livedata")
+    implementation(libs.ui)
     //implementaciones nuevas
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
