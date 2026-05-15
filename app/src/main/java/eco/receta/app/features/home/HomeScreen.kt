@@ -73,6 +73,8 @@ fun HomeScreen(
         }
     ) { innerPadding ->
 
+
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -149,15 +151,18 @@ fun HomeScreen(
                         // Resto: lista de tarjetas pequeñas
                         items(
                             items = recetas.drop(1),
-                            key   = { it.id }   // key mejora el rendimiento del LazyColumn
+                            key = { "sistema_${it.id}_${it.tipoOrigen}" }
                         ) { recipe ->
+
+                        if (recipe != recetas.first()) {
                             LocalRecipeItem(
-                                recipe  = recipe,
+                                recipe = recipe,
                                 onClick = { onRecipeClick(recipe.id) },
                                 modifier = Modifier.padding(
                                     horizontal = 20.dp, vertical = 6.dp
                                 )
                             )
+                        }
                         }
                     }
                 }
@@ -185,7 +190,7 @@ fun HomeScreen(
                     } else {
                         items(
                             items = privadasState.recipes,
-                            key   = { it.id }
+                            key = { "privada_${it.id}_${it.creadoEn}" }  // creadoEn es timestamp único
                         ) { recipe ->
                             LocalRecipeItem(
                                 recipe  = recipe,

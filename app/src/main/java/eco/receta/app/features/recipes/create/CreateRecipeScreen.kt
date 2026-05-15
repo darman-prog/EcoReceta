@@ -96,7 +96,8 @@ fun CreateRecipeScreen(
                         .fillMaxWidth()
                         .statusBarsPadding()
                         .padding(horizontal = 20.dp, vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
                         text = buildAnnotatedString {
@@ -113,7 +114,7 @@ fun CreateRecipeScreen(
                     )
                     Spacer(Modifier.width(10.dp))
                     Text(
-                        text = "· Crear Receta",
+                        text = "Crear Receta",
                         fontSize = 16.sp,
                         color = GrisTexto,
                         fontWeight = FontWeight.Normal
