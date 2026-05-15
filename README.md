@@ -1,3 +1,11 @@
+#Feature 0.1
+
+5/04/2026
+
+*Se subieron los datos a fireStore y se creo el json de los productos*
+
+*by Pablo osorio*
+
 # Feature 1
 25/04/2026
 
@@ -71,3 +79,11 @@ cambiamos interfaces y falta agregar algunos detalles tipo pantallas de cargas o
 
 
 *by Diego Meza.*
+
+# Feature Final
+
+15/05/2026
+
+*terminamos todo viva moviles te amo kotlin*
+
+*by Pablo Osorio y Diego Meza*
