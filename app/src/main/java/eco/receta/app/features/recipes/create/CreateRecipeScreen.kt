@@ -304,6 +304,96 @@ fun CreateRecipeScreen(
                 }
             }
 
+
+            // ── Selector de porciones ────────────────────────────────────────
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(CampoFondo)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("📜", fontSize = 18.sp)
+                    Column {
+                        Text(
+                            "Porciones",
+                            fontWeight = FontWeight.Bold,
+                            color = MarronOscuro,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            "¿Para cuántas personas?",
+                            color = GrisTexto,
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+
+                // Controles - / número / +
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(0.dp)
+                ) {
+                    // Botón decrementar
+                    IconButton(
+                        onClick = viewModel::decrementarPorciones,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(
+                                if (uiState.porciones > 1) MarronOscuro
+                                else MarronOscuro.copy(alpha = 0.3f)
+                            )
+                    ) {
+                        Icon(
+                            Icons.Default.Remove,
+                            contentDescription = "Reducir porciones",
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+
+                    // Número actual
+                    Box(
+                        modifier = Modifier
+                            .width(52.dp)
+                            .height(36.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = uiState.porciones.toString(),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MarronOscuro
+                        )
+                    }
+
+                    // Botón incrementar
+                    IconButton(
+                        onClick = viewModel::incrementarPorciones,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MarronOscuro)
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "Aumentar porciones",
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+
             // ── Selector de categoría ────────────────────────────────────────
             Spacer(modifier = Modifier.height(8.dp))
 

@@ -62,6 +62,16 @@ class CreateRecipeViewModel : ViewModel() {
         uiState = uiState.copy(visibilidad = visibilidad)
     }
 
+    fun incrementarPorciones() {
+        uiState = uiState.copy(porciones = uiState.porciones + 1)
+    }
+
+    fun decrementarPorciones() {
+        if (uiState.porciones > 1) {
+            uiState = uiState.copy(porciones = uiState.porciones - 1)
+        }
+    }
+
     fun onCategoriaChange(value: String) { uiState = uiState.copy(categoria = value) }
     fun addIngrediente(ingrediente: IngredienteSeleccionado) {
         val existe = uiState.ingredientesSeleccionados.any { it.productoId == ingrediente.productoId }
@@ -84,6 +94,8 @@ class CreateRecipeViewModel : ViewModel() {
                 .filter { it.productoId != productoId }
         )
     }
+
+
 
     fun guardarReceta() {
 

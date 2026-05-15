@@ -53,7 +53,7 @@ class IngredientViewModel : ViewModel() {
                 return@launch
             }
 
-            repository.getProductosPaginados(limit = 300)
+            repository.getProductosPaginados(limit = 638)
                 .onSuccess { productos ->
                     productosCache = productos  // ← Guardar en caché
                     uiState = uiState.copy(
