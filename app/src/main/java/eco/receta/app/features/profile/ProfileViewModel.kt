@@ -107,9 +107,14 @@ class ProfileViewModel : ViewModel() {
     // ═══════════════════════════════════════════════════════════
     private fun crearUsuarioSiNoExiste(nombre: String?, email: String?, uid: String) {
         viewModelScope.launch {
+            val nombreFinal = auth.currentUser?.displayName
+                ?.takeIf { it.isNotBlank() }
+                ?: nombre
+                ?: "Usuario EcoReceta"
+
             userRepository.crearUsuarioEnFirestore(
                 uid = uid,
-                nombre = nombre ?: "Usuario EcoReceta",
+                nombre = nombreFinal ?: "Usuario EcoReceta",
                 email = email ?: ""
             )
             // Recargar datos

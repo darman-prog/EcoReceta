@@ -30,7 +30,7 @@ class ExploreViewModel(
     // Lista completa sin filtrar
     private var todasLasRecetas: List<Recipe> = emptyList()
 
-    val categorias = listOf("Todas", "Tradicional", "Gourmet", "Snack", "Familiar", "Saludable")
+    val categorias = listOf("Todas", "ACOMPAÑAMIENTOS", "SOPAS", "BEBIDAS FRÍAS","ALMUERZOS")
 
     init { cargarRecetas() }
 

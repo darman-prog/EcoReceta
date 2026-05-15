@@ -25,6 +25,7 @@ data class CreateUiState(
     val tiempoMinutos: String = "",
     val porciones: Int = 1,
     val nivel: String = "Fácil",
+    val categoria: String = "ALMUERZOS",  // ← NUEVO con valor por defecto
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
     val error: String? = null
@@ -51,14 +52,6 @@ class CreateRecipeViewModel : ViewModel() {
     fun onImagenSelected(uri: Uri) { uiState = uiState.copy(imagenUri = uri) }
     fun onTiempoChange(value: String) { uiState = uiState.copy(tiempoMinutos = value) }
 
-    fun onPorcionesChange(value: String) {
-        val porcionesInt = value.toIntOrNull()
-        if (porcionesInt != null && porcionesInt > 0) {
-            uiState = uiState.copy(porciones = porcionesInt)
-        } else if (value.isEmpty()) {
-            uiState = uiState.copy(porciones = 0)
-        }
-    }
 
     fun onNivelChange(value: String) { uiState = uiState.copy(nivel = value) }
 
@@ -69,6 +62,7 @@ class CreateRecipeViewModel : ViewModel() {
         uiState = uiState.copy(visibilidad = visibilidad)
     }
 
+    fun onCategoriaChange(value: String) { uiState = uiState.copy(categoria = value) }
     fun addIngrediente(ingrediente: IngredienteSeleccionado) {
         val existe = uiState.ingredientesSeleccionados.any { it.productoId == ingrediente.productoId }
 
@@ -92,6 +86,7 @@ class CreateRecipeViewModel : ViewModel() {
     }
 
     fun guardarReceta() {
+
         if (uiState.nombre.isBlank()) {
             uiState = uiState.copy(error = "El nombre del plato es obligatorio")
             return
@@ -124,12 +119,14 @@ class CreateRecipeViewModel : ViewModel() {
                 tipoOrigen = TipoOrigen.USUARIO,
                 visibilidad = uiState.visibilidad,  // ← Mismo tipo, no necesita conversión
                 autorID = "",
+                categoria   = uiState.categoria,   // ← NUEVO
                 autorNombre = "",
                 esOficial = false,
-                ingredientes_ids = uiState.ingredientesSeleccionados.map { it.productoId },
+                ingredientes_ids = uiState.ingredientesSeleccionados.map { it.nombre },
                 creadoEn = System.currentTimeMillis(),
                 imagen = uiState.imagenUri?.toString() ?: ""
             )
+
 
             try {
                 recipeRepository.guardarReceta(recipe)

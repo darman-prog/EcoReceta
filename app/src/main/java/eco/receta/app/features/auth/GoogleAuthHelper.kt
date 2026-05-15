@@ -75,7 +75,7 @@ class GoogleAuthHelper(private val context: Context) {
             GoogleSignInResult.Cancelled
         } catch (e: GetCredentialException) {
             // Error técnico de Credential Manager (ej: falta configuración SHA-1 o Play Services)
-            GoogleSignInResult.Error("Error de credenciales: ${e.message} (${e.javaClass.simpleName})")
+            GoogleSignInResult.Error("Error de credenciales: ${e.message} (${e.javaClass.simpleName} agrega una cuenta de correo para vincular)")
         } catch (e: Exception) {
             GoogleSignInResult.Error(
                 e.message ?: "Error desconocido al iniciar sesión con Google."

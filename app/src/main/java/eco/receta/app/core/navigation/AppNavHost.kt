@@ -35,17 +35,35 @@ import eco.receta.app.features.recipes.create.IngredienteSeleccionado
 import eco.receta.app.features.recipes.detail.RecipeDetailScreen
 import com.google.gson.Gson
 import eco.receta.app.features.recipes.create.CreateRecipeViewModel
+import eco.receta.app.features.splash.SplashScreen
 
 
 @Composable
 fun AppNavHost(
     navController: NavHostController,
-    startRoute: String              // ← recibe "home" o "login" desde MainActivity
+    startRoute: String,
+    auth: FirebaseAuth              // ← recibe auth
 ) {
     NavHost(
         navController    = navController,
-        startDestination = startRoute  // ← ya no lo calcula aquí
+        startDestination = Routes.SPLASH  // ← ya no lo calcula aquí
     ) {
+
+        composable(Routes.SPLASH) {
+            SplashScreen(
+                onSplashFinished = {
+                    // Después del splash decide a dónde ir
+                    val destination = if (auth.currentUser != null) {
+                        Routes.HOME
+                    } else {
+                        Routes.LOGIN
+                    }
+                    navController.navigate(destination) {
+                        popUpTo(Routes.SPLASH) { inclusive = true } // elimina splash del backstack
+                    }
+                }
+            )
+        }
 
         composable(Routes.LOGIN) {
             LoginScreen(

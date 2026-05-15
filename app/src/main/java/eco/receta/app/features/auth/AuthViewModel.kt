@@ -145,7 +145,29 @@ class AuthViewModel : ViewModel() {
         viewModelScope.launch {
             _registerState.update { it.copy(isLoading = true, authError = null) }
             try {
-                auth.createUserWithEmailAndPassword(state.email.trim(), state.password).await()
+                // 1. Crear cuenta en Firebase Auth
+                val result = auth.createUserWithEmailAndPassword(
+                    state.email.trim(),
+                    state.password
+                ).await()
+
+                // 2. Guardar el displayName en Firebase Auth ← CLAVE
+                val profileUpdates = com.google.firebase.auth.userProfileChangeRequest {
+                    displayName = state.fullName.trim()
+                }
+                result.user?.updateProfile(profileUpdates)?.await()
+
+                // 3. Guardar el usuario en Firestore con el nombre real
+                val uid = result.user?.uid ?: ""
+                if (uid.isNotEmpty()) {
+                    eco.receta.app.data.repository.UserRepository()
+                        .crearUsuarioEnFirestore(
+                            uid    = uid,
+                            nombre = state.fullName.trim(),  // ← nombre real
+                            email  = state.email.trim(),
+                            fotoUrl = ""
+                        )
+                }
                 _registerState.update { it.copy(isLoading = false, isSuccess = true) }
             } catch (e: FirebaseAuthUserCollisionException) {
                 _registerState.update {

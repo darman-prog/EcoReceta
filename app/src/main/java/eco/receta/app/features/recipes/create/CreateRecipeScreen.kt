@@ -46,7 +46,7 @@ private val Dorado       = Color(0xFFC8922A)
 private val Rojo         = Color(0xFFD94F3D)
 private val TarjetaBg    = Color(0xFFFFF8F2)
 private val CampoFondo   = Color(0xFFEDE8DF)
-private val GrisTexto    = Color(0xFF8D8D8D)
+val GrisTexto    = Color(0xFF8D8D8D)
 private val VerdeExito   = Color(0xFF2E7D32)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -303,6 +303,77 @@ fun CreateRecipeScreen(
                     }
                 }
             }
+
+            // ── Selector de categoría ────────────────────────────────────────
+            Spacer(modifier = Modifier.height(8.dp))
+
+            var expandedCategoria by remember { mutableStateOf(false) }
+
+            val categorias = listOf(
+                "ACOMPAÑAMIENTOS",
+                "SOPAS",
+                "BEBIDAS FRÍAS",
+                "ALMUERZOS"
+            )
+
+            ExposedDropdownMenuBox(
+                expanded = expandedCategoria,
+                onExpandedChange = { expandedCategoria = it }
+            ) {
+                OutlinedTextField(
+                    value = uiState.categoria,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Categoría") },
+                    leadingIcon = { Text("🍽", fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp)) },
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCategoria)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = CampoFondo,
+                        focusedContainerColor   = CampoFondo,
+                        unfocusedBorderColor    = Color.Transparent,
+                        focusedBorderColor      = Dorado
+                    )
+                )
+                ExposedDropdownMenu(
+                    expanded = expandedCategoria,
+                    onDismissRequest = { expandedCategoria = false }
+                ) {
+                    categorias.forEach { categoria ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = categoria,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MarronOscuro
+                                )
+                            },
+                            onClick = {
+                                viewModel.onCategoriaChange(categoria)
+                                expandedCategoria = false
+                            },
+                            leadingIcon = {
+                                Text(
+                                    text = when (categoria) {
+                                        "ACOMPAÑAMIENTOS" -> "🍚"
+                                        "SOPAS"           -> "🍲"
+                                        "BEBIDAS FRÍAS"   -> "🥤"
+                                        "ALMUERZOS"       -> "🍽"
+                                        else              -> "🍴"
+                                    },
+                                    fontSize = 16.sp
+                                )
+                            }
+                        )
+                    }
+                }
+            }
+
 
             // ── 5. INGREDIENTES ──────────────────────────────────────────
             Row(

@@ -22,6 +22,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
@@ -32,6 +33,8 @@ import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import eco.receta.app.core.components.EcoBottomNavBar
 import eco.receta.app.data.model.Recipe
+import eco.receta.app.features.home.ColorGold
+import eco.receta.app.features.recipes.create.GrisTexto
 
 // ─── Colores del Figma ───────────────────────────────────────────────────────
 private val ColorCream     = Color(0xFFFAF3EE)
@@ -154,14 +157,6 @@ fun ExploreScreen(
                         fontWeight = FontWeight.Bold,
                         color = ColorDarkBrown
                     )
-                    TextButton(onClick = {}) {
-                        Text(
-                            text = "Ver todo →",
-                            color = ColorGold,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp
-                        )
-                    }
                 }
             }
 
@@ -215,17 +210,27 @@ private fun ExploreTopBar() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "EcoReceta",
+            text = buildAnnotatedString {
+                append("Eco")
+                withStyle(style = SpanStyle(color = ColorGold)) {
+                    append("Receta")
+                }
+            },
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = ColorDarkBrown
         )
-        Icon(
-            imageVector = Icons.Default.Search,
-            contentDescription = "Buscar",
-            tint = ColorDarkBrown,
-            modifier = Modifier.size(24.dp)
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+
+            Text(
+                text = "Explorar Recetas",
+                fontSize = 16.sp,
+                color = GrisTexto,
+                fontWeight = FontWeight.Normal,
+            )
+        }
     }
 }
 
