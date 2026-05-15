@@ -85,6 +85,16 @@ class CreateRecipeViewModel : ViewModel() {
         )
     }
 
+    fun incrementarPorciones() {
+        uiState = uiState.copy(porciones = uiState.porciones + 1)
+    }
+
+    fun decrementarPorciones() {
+        if (uiState.porciones > 1) {
+            uiState = uiState.copy(porciones = uiState.porciones - 1)
+        }
+    }
+
     fun guardarReceta() {
 
         if (uiState.nombre.isBlank()) {
