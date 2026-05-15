@@ -13,6 +13,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import com.google.firebase.firestore.FieldValue
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.tasks.await
 
 data class ProfileUiState(
     val user: User? = null,                    // Datos reales del usuario
@@ -34,6 +37,8 @@ class ProfileViewModel : ViewModel() {
     private val recipeRepository = RecipeRepository()
     private val userRepository = UserRepository()
     private val auth = FirebaseAuth.getInstance()
+
+    private val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
 
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
@@ -133,6 +138,37 @@ class ProfileViewModel : ViewModel() {
         viewModelScope.launch {
             userRepository.actualizarBadge(uid, recetasTotales)
                 .onSuccess { loadProfileData() }
+        }
+    }
+    fun guardarRecetaEnPerfil(recetaId: String) {
+        val uid = auth.currentUser?.uid ?: return
+        viewModelScope.launch {
+            try {
+                // 1. Marcar como guardada en el array del usuario (comportamiento original)
+                db.collection("usuarios").document(uid)
+                    .update("recetasGuardadas", FieldValue.arrayUnion(recetaId))
+                    .await()
+
+                // 2. Leer la receta pública y copiarla a recetas_privadas del usuario
+                //    para que aparezca en "Mi Recetario" en el HomeScreen
+                val docPublico = db.collection("recetas_publicas")
+                    .document(recetaId)
+                    .get()
+                    .await()
+
+                if (docPublico.exists()) {
+                    val datos = docPublico.data ?: return@launch
+                    // Guardamos en recetas_privadas con el mismo ID para evitar duplicados
+                    db.collection("usuarios")
+                        .document(uid)
+                        .collection("recetas_privadas")
+                        .document(recetaId)
+                        .set(datos)
+                        .await()
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message) }
+            }
         }
     }
 
