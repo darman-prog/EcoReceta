@@ -67,6 +67,7 @@ dependencies {
     implementation("androidx.compose.runtime:runtime-livedata")
     implementation(libs.ui)
     implementation(libs.androidx.compose.animation)
+    implementation("com.google.firebase:firebase-storage")
     //implementaciones nuevas
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -225,9 +226,17 @@ fun LoginContent(
             Spacer(modifier = Modifier.height(24.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Divider(modifier = Modifier.weight(1f), color = Color(0xFF939090))
+                HorizontalDivider(
+                    modifier = Modifier.weight(1f),
+                    thickness = DividerDefaults.Thickness,
+                    color = Color(0xFF939090)
+                )
                 Text("  o usa  ", color = ColorLabelText, fontSize = 12.sp)
-                Divider(modifier = Modifier.weight(1f), color = Color(0xFF939090))
+                HorizontalDivider(
+                    modifier = Modifier.weight(1f),
+                    thickness = DividerDefaults.Thickness,
+                    color = Color(0xFF939090)
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))

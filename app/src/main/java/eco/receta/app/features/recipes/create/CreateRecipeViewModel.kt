@@ -7,13 +7,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import eco.receta.app.data.model.Recipe
 import eco.receta.app.data.model.TipoOrigen
 import eco.receta.app.data.model.Visibilidad
 import eco.receta.app.data.repository.RecipeRepository
 import kotlinx.coroutines.launch
-
-
+import kotlinx.coroutines.tasks.await
 
 
 data class CreateUiState(
@@ -51,8 +52,6 @@ class CreateRecipeViewModel : ViewModel() {
     fun onDescripcionChange(value: String) { uiState = uiState.copy(descripcion = value) }
     fun onImagenSelected(uri: Uri) { uiState = uiState.copy(imagenUri = uri) }
     fun onTiempoChange(value: String) { uiState = uiState.copy(tiempoMinutos = value) }
-
-
     fun onNivelChange(value: String) { uiState = uiState.copy(nivel = value) }
 
     // ═══════════════════════════════════════════════════════════
@@ -97,8 +96,24 @@ class CreateRecipeViewModel : ViewModel() {
 
 
 
+    private suspend fun getAutorNombre(uid: String): String {
+        val snap = FirebaseFirestore.getInstance()
+            .collection("usuarios")
+            .document(uid)
+            .get()
+            .await()
+
+        return snap.getString("nombreCompleto")
+            ?: snap.getString("nombre")
+            ?: "Usuario"
+    }
+
+
+
+    // features/recipes/create/CreateRecipeViewModel.kt
     fun guardarReceta() {
 
+        // Validaciones (las tuyas están bien)
         if (uiState.nombre.isBlank()) {
             uiState = uiState.copy(error = "El nombre del plato es obligatorio")
             return
@@ -106,45 +121,56 @@ class CreateRecipeViewModel : ViewModel() {
 
         val tiempoInt = uiState.tiempoMinutos.toIntOrNull()
         if (tiempoInt == null || tiempoInt <= 0) {
-            uiState = uiState.copy(error = "Ingresa un tiempo válido en minutos")
+            uiState = uiState.copy(error = "Ingresa un tiempo válido")
             return
         }
 
-        if (uiState.porciones <= 0) {
-            uiState = uiState.copy(error = "Ingresa al menos 1 porción")
+        val imagenUri = uiState.imagenUri
+        if (imagenUri == null) {
+            uiState = uiState.copy(error = "Debes seleccionar una imagen")
             return
         }
 
         viewModelScope.launch {
             uiState = uiState.copy(isLoading = true, error = null)
 
-            val costoTotal = uiState.ingredientesSeleccionados.sumOf { it.precio }
+            val uid = FirebaseAuth.getInstance().currentUser?.uid
+                ?: run {
+                    uiState = uiState.copy(error = "Usuario no autenticado")
+                    return@launch
+                }
 
-            val recipe = Recipe(
-                nombre = uiState.nombre,
-                descripcion = uiState.descripcion,
-                imageUrl = uiState.imagenUri?.toString() ?: "",
-                tiempoMinutos = tiempoInt,
-                porciones = uiState.porciones,
-                nivel = uiState.nivel,
-                costoTotal = costoTotal,
-                tipoOrigen = TipoOrigen.USUARIO,
-                visibilidad = uiState.visibilidad,  // ← Mismo tipo, no necesita conversión
-                autorID = "",
-                categoria   = uiState.categoria,   // ← NUEVO
-                autorNombre = "",
-                esOficial = false,
-                ingredientes_ids = uiState.ingredientesSeleccionados.map { it.nombre },
-                creadoEn = System.currentTimeMillis(),
-                imagen = uiState.imagenUri?.toString() ?: ""
-            )
+            val autorNombre = getAutorNombre(uid)
 
 
             try {
-                recipeRepository.guardarReceta(recipe)
+                recipeRepository.crearRecetaConImagen(
+                    recipe = Recipe(
+                        nombre = uiState.nombre,
+                        descripcion = uiState.descripcion,
+                        tiempoMinutos = tiempoInt,
+                        porciones = uiState.porciones,
+                        nivel = uiState.nivel,
+                        categoria = uiState.categoria,
+                        costoTotal = uiState.ingredientesSeleccionados.sumOf { it.precio },
+                        tipoOrigen = TipoOrigen.USUARIO,
+                        visibilidad = uiState.visibilidad,
+                        autorID = uid,
+                        autorNombre = autorNombre,
+                        esOficial = false,
+                        ingredientes_ids = uiState.ingredientesSeleccionados.map { it.nombre },
+                        creadoEn = System.currentTimeMillis()
+                    ),
+                    imageUri = imagenUri
+                )
+
                 uiState = uiState.copy(isLoading = false, isSuccess = true)
+
             } catch (e: Exception) {
-                uiState = uiState.copy(isLoading = false, error = e.message)
+                uiState = uiState.copy(
+                    isLoading = false,
+                    error = e.message ?: "Error al guardar la receta"
+                )
             }
         }
     }

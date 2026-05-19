@@ -2,6 +2,7 @@
 
 package eco.receta.app.data.model
 
+
 import com.google.firebase.firestore.PropertyName
 
 

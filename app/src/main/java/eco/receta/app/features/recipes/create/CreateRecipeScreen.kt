@@ -1,6 +1,7 @@
 package eco.receta.app.features.recipes.create
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
@@ -26,6 +27,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -81,9 +83,25 @@ fun CreateRecipeScreen(
         label = "screenOffset"
     )
 
+
+    val context = LocalContext.current
+
     val imagePicker = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri: Uri? -> uri?.let { viewModel.onImagenSelected(it) } }
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri ?: return@rememberLauncherForActivityResult
+
+        val mimeType = context.contentResolver.getType(uri)
+        if (mimeType?.startsWith("image/") != true) {
+            // muestra error en UI (snackbar/toast)
+            viewModel.clearError()
+            Toast.makeText(context, "El archivo no es una imagen", Toast.LENGTH_SHORT).show()
+            return@rememberLauncherForActivityResult
+        }
+
+        viewModel.onImagenSelected(uri)
+    }
+
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
@@ -239,6 +257,18 @@ fun CreateRecipeScreen(
                         )
                     }
                 }
+                if (uiState.isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.45f))
+                            .clickable(enabled = false) {}, // bloquea taps
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Dorado)
+                    }
+                }
+
             }
 
             // ── 2. NOMBRE con validación visual ──────────────────────────
@@ -836,7 +866,7 @@ private fun IngredienteCard(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("🥬", fontSize = 20.sp)
+                    Text("🧾", fontSize = 20.sp)
                 }
                 Column {
                     Text(

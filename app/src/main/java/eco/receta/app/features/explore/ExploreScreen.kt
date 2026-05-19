@@ -40,17 +40,16 @@ import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import eco.receta.app.core.components.EcoBottomNavBar
+import eco.receta.app.core.utils.AuthorNameFormatter
 import eco.receta.app.data.model.Recipe
 import eco.receta.app.features.home.ColorGold
 import eco.receta.app.features.recipes.create.GrisTexto
 
-// ─── Colores del Figma ───────────────────────────────────────────────────────
+// ─── Colores  ───────────────────────────────────────────────────────
 private val ColorCream     = Color(0xFFFAF3EE)
 private val ColorDarkBrown = Color(0xFF2C1A0E)
 private val ColorRed       = Color(0xFFD94F3D)
-private val ColorGold      = Color(0xFFC8922A)
 private val ColorBodyText  = Color(0xFF5C4033)
-private val ColorFieldBg   = Color(0xFFEDE8DF)
 private val ColorCardBg    = Color(0xFFFFF8F2)
 private val ColorChipActive = Color(0xFF2C1A0E)
 private val ColorChipInactive = Color(0xFFEDE8DF)
@@ -254,7 +253,6 @@ private fun ExploreTopBar() {
 }
 
 // ─── Chips de categoría ───────────────────────────────────────────────────────
-// ui/explore/CategoryChips.kt
 @Composable
 private fun CategoryChips(
     categorias: List<String>,
@@ -487,7 +485,6 @@ private fun PopularRecipeItem(
 
             // ── Info ─────────────────────────────────────────────────────
             Column(modifier = Modifier.weight(1f)) {
-
                 // Categoría
                 Text(
                     text = recipe.categoria.uppercase(),
@@ -496,9 +493,6 @@ private fun PopularRecipeItem(
                     color = ColorGold,
                     letterSpacing = 1.sp
                 )
-
-                Spacer(Modifier.height(4.dp))
-
                 // Nombre
                 Text(
                     text = recipe.nombre,
@@ -508,10 +502,30 @@ private fun PopularRecipeItem(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-
-                Spacer(Modifier.height(6.dp))
-
-                // Tiempo + Rating
+                //autor
+                val isPublic = recipe.visibilidad.name.equals("publica", ignoreCase = true)
+                if (isPublic) {
+                    val autor = AuthorNameFormatter.format(recipe.autorNombre, maxChars = 18)
+                    if (autor.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Por $autor",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = ColorBodyText.copy(alpha = 0.75f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                Text(
+                    text       = "$${"%,.0f".format(recipe.costoTotal).replace(",", ".")}",
+                    fontSize   = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = ColorRed
+                )
+            }
+            Spacer(Modifier.height(6.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -525,7 +539,6 @@ private fun PopularRecipeItem(
             }
         }
     }
-}
 
 // ─── Estados visuales ─────────────────────────────────────────────────────────
 @Composable

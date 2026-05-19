@@ -1,8 +1,10 @@
 package eco.receta.app.data.repository
 
+import android.net.Uri
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
+import com.google.firebase.storage.FirebaseStorage
 import eco.receta.app.data.model.Recipe
 import eco.receta.app.data.model.TipoOrigen
 import eco.receta.app.data.model.Visibilidad
@@ -84,35 +86,48 @@ class RecipeRepository {
     // ─────────────────────────────────────────────────────────────────────
     // GUARDAR receta — decide la colección según visibilidad
     // ─────────────────────────────────────────────────────────────────────
-    suspend fun guardarReceta(recipe: Recipe) {
-        val uid  = auth.currentUser?.uid ?: throw Exception("Usuario no autenticado.")
-        val nombre = auth.currentUser?.displayName ?: "Anónimo"
+    suspend fun crearRecetaConImagen(
+        recipe: Recipe,
+        imageUri: Uri
+    ) {
+        val firestore = FirebaseFirestore.getInstance()
+        val docRef = firestore.collection("recetas_publicas").document()
+        val recipeId = docRef.id
 
-        val recetaFinal = recipe.copy(
-            autorID     = uid,
-            autorNombre = nombre,
-            creadoEn    = System.currentTimeMillis()
-        )
+        val recipeWithId = recipe.copy(id = recipeId)
 
-        if (recipe.visibilidad == Visibilidad.PUBLICA) {
-            // Va a recetas_publicas con tipoOrigen USUARIO
-            colPublicas.add(
-                recetaFinal.copy(tipoOrigen = TipoOrigen.USUARIO)
-            ).await()
-        } else {
-            // Va a /usuarios/{UID}/recetas_privadas/
-            colPrivadas(uid).add(recetaFinal).await()
-        }
+        val storageRef = FirebaseStorage.getInstance()
+            .reference
+            .child("recetas_publicas/$recipeId/cover.jpg")
 
-        // ═══════════════════════════════════════════════════════════
-        // NUEVO: Incrementar contador de recetas del usuario
-        // Se ejecuta DESPUÉS de guardar la receta exitosamente
-        // ═══════════════════════════════════════════════════════════
-        userRepository.incrementarRecetasCreadas(uid)
-            .onFailure { e ->
-                // Loguear error pero no fallar la creación de receta
-                // El contador puede sincronizarse después
-                println("Error actualizando stats: ${e.message}")
+        var imageUploaded = false
+
+        try {
+            // 1️⃣ Guardar receta base
+            docRef.set(recipeWithId).await()
+
+            // 2️⃣ Subir imagen
+            storageRef.putFile(imageUri).await()
+            imageUploaded = true
+
+            val url = storageRef.downloadUrl.await().toString()
+
+            // 3️⃣ Guardar URL
+            docRef.update("imageUrl", url).await()
+
+        } catch (e: Exception) {
+
+            // ✅ Solo borrar si realmente se subió
+            if (imageUploaded) {
+                runCatching { storageRef.delete().await() }
             }
+
+            // ✅ Firestore siempre se limpia
+            runCatching { docRef.delete().await() }
+
+            throw e
+        }
     }
+
+
 }
