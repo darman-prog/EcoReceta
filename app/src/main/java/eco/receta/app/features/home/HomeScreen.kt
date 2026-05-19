@@ -50,7 +50,7 @@ private val ColorRed       = Color(0xFFD94F3D)
 val ColorGold      = Color(0xFFC8922A)
 private val ColorBodyText  = Color(0xFF5C4033)
 private val ColorFieldBg   = Color(0xFFEDE8DF)
-private val ColorCardBg    = Color(0xFFF1E4DF)
+private val ColorCardBg    = Color(0xFFF8F6F6)
 
 @Composable
 fun HomeScreen(
@@ -403,7 +403,7 @@ private fun FeaturedRecipeCard(
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .background(Color(0xFFD6C5B5))
+                                    .background(Color(0xFFF8F7F6))
                             )
                         }
                         is AsyncImagePainter.State.Error -> {
