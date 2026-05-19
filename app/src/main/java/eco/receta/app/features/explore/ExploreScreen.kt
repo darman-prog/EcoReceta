@@ -1,7 +1,14 @@
 package eco.receta.app.features.explore
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -82,35 +90,46 @@ fun ExploreScreen(
                 ExploreTopBar()
             }
 
-            // ── Título con estilo del Figma ──────────────────────────────
+            // ── Título
             item {
-                Column(
-                    modifier = Modifier.padding(
-                        horizontal = 20.dp,
-                        vertical = 12.dp
-                    )
+                val visible = remember { mutableStateOf(false) }
+
+                LaunchedEffect(Unit) {
+                    visible.value = true
+                }
+
+                AnimatedVisibility(
+                    visible = visible.value,
+                    enter = fadeIn() + slideInVertically { it / 3 }
                 ) {
-                    Text(
-                        text = "Sabores que",
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = ColorDarkBrown
-                    )
-                    // "inspiran." en dorado e itálico como en el Figma
-                    Text(
-                        text = buildAnnotatedString {
-                            withStyle(
-                                SpanStyle(
-                                    color = ColorGold,
-                                    fontStyle = FontStyle.Italic,
-                                    fontWeight = FontWeight.ExtraBold
-                                )
-                            ) { append("inspiran.") }
-                        },
-                        fontSize = 32.sp
-                    )
+                    Row(
+                        modifier = Modifier.padding(
+                            horizontal = 20.dp,
+                            vertical = 12.dp
+                        )
+                    ) {
+                        Text(
+                            text = "Sabores que",
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = ColorDarkBrown
+                        )
+                        Text(
+                            text = buildAnnotatedString {
+                                withStyle(
+                                    SpanStyle(
+                                        color = ColorGold,
+                                        fontStyle = FontStyle.Italic,
+                                        fontWeight = FontWeight.ExtraBold
+                                    )
+                                ) { append(" inspiran.") }
+                            },
+                            fontSize = 32.sp
+                        )
+                    }
                 }
             }
+
 
             // ── Chips de categorías ──────────────────────────────────────
             item {
@@ -235,6 +254,7 @@ private fun ExploreTopBar() {
 }
 
 // ─── Chips de categoría ───────────────────────────────────────────────────────
+// ui/explore/CategoryChips.kt
 @Composable
 private fun CategoryChips(
     categorias: List<String>,
@@ -246,15 +266,31 @@ private fun CategoryChips(
         modifier = modifier
             .horizontalScroll(rememberScrollState())
             .padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         categorias.forEach { categoria ->
             val isActive = categoria == categoriaActiva
+
+            val bgColor by animateColorAsState(
+                targetValue = if (isActive) ColorChipActive else ColorChipInactive,
+                label = "chipColor"
+            )
+
+            val scale by animateFloatAsState(
+                targetValue = if (isActive) 1.05f else 1f,
+                label = "chipScale"
+            )
+
             Surface(
                 onClick = { onCategoriaSelected(categoria) },
                 shape = RoundedCornerShape(50),
-                color = if (isActive) ColorChipActive else ColorChipInactive,
-                modifier = Modifier.height(34.dp)
+                color = bgColor,
+                modifier = Modifier
+                    .height(34.dp)
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                    }
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
@@ -263,7 +299,7 @@ private fun CategoryChips(
                     Text(
                         text = categoria,
                         fontSize = 13.sp,
-                        fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
+                        fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
                         color = if (isActive) Color.White else ColorBodyText
                     )
                 }
@@ -273,113 +309,136 @@ private fun CategoryChips(
 }
 
 // ─── Tarjeta destacada grande ─────────────────────────────────────────────────
+
 @Composable
 private fun DestacadaCard(
     recipe: Recipe,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
-) {
-    Card(
-        onClick   = onClick,
-        modifier  = modifier.fillMaxWidth().height(280.dp),
-        shape     = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+    val visible = remember { mutableStateOf(false) }
 
-            // ── Imagen con Coil ──────────────────────────────────────────
-            SubcomposeAsyncImage(
-                model              = recipe.imageUrl,
-                contentDescription = recipe.nombre,
-                contentScale       = ContentScale.Crop,
-                modifier           = Modifier.fillMaxSize()
-            ) {
-                when (painter.state) {
-                    is AsyncImagePainter.State.Loading ->
-                        Box(Modifier.fillMaxSize().background(Color(0xFFD6C5B5)))
-                    is AsyncImagePainter.State.Error ->
-                        Box(Modifier.fillMaxSize().background(Color(0xFF3D2010)))
-                    else -> SubcomposeAsyncImageContent()
+    LaunchedEffect(Unit) {
+        visible.value = true
+    }
+
+    AnimatedVisibility(
+        visible = visible.value,
+        enter = fadeIn() + slideInVertically { it / 2 }
+    ) {
+        Card(
+            onClick = onClick,
+            modifier = modifier
+                .fillMaxWidth()
+                .height(280.dp),
+            shape = RoundedCornerShape(24.dp),
+            elevation = CardDefaults.cardElevation(8.dp)
+        )
+        {
+            Box(modifier = Modifier.fillMaxSize()) {
+
+                // ── Imagen con Coil ──────────────────────────────────────────
+                SubcomposeAsyncImage(
+                    model = recipe.imageUrl,
+                    contentDescription = recipe.nombre,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    when (painter.state) {
+                        is AsyncImagePainter.State.Loading ->
+                            Box(Modifier.fillMaxSize().background(Color(0xFFD6C5B5)))
+
+                        is AsyncImagePainter.State.Error ->
+                            Box(Modifier.fillMaxSize().background(Color(0xFF3D2010)))
+
+                        else -> SubcomposeAsyncImageContent()
+                    }
                 }
-            }
 
-            // ── Gradiente ────────────────────────────────────────────────
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color(0xEE000000)),
-                            startY = 60f
+                // ── Gradiente ────────────────────────────────────────────────
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    Color(0xAA2C1A0E),
+                                    Color(0xFF2C1A0E)
+                                ),
+                                startY = 120f
+                            )
                         )
-                    )
-            )
-
-            // ── Badge "RECOMENDADO" ───────────────────────────────────────
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(start = 16.dp, bottom = 92.dp),
-                shape = RoundedCornerShape(6.dp),
-                color = ColorGold
-            ) {
-                Text(
-                    text = "RECOMENDADO",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color.White,
-                    letterSpacing = 1.sp,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 )
-            }
 
-            // ── Info inferior ────────────────────────────────────────────
-            Row(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = recipe.nombre,
-                        color = Color.White,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 22.sp,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = "$${"%,.0f".format(recipe.costoTotal).replace(",", ".")}",
-                        color = Color.White.copy(alpha = 0.9f),
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                // Botón "Ver Receta"
-                Button(
-                    onClick = onClick,
-                    shape = RoundedCornerShape(50),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF3D2E1A)
-                    ),
-                    contentPadding = PaddingValues(
-                        horizontal = 16.dp,
-                        vertical = 10.dp
-                    )
+                // ── Badge "RECOMENDADO" ───────────────────────────────────────
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 16.dp, bottom = 92.dp),
+                    shape = RoundedCornerShape(6.dp),
+                    color = ColorGold
                 ) {
                     Text(
-                        text = "Ver\nReceta",
+                        text = "RECOMENDADO",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.ExtraBold,
                         color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        letterSpacing = 1.sp,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
+                }
+
+                // ── Info inferior ────────────────────────────────────────────
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = recipe.nombre,
+                            color = Color.White,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 22.sp,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = "$${"%,.0f".format(recipe.costoTotal).replace(",", ".")}",
+                            color = Color.White.copy(alpha = 0.9f),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    // Botón "Ver Receta"
+
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val pressed by interactionSource.collectIsPressedAsState()
+
+                    Button(
+                        onClick = onClick,
+                        interactionSource = interactionSource,
+                        shape = RoundedCornerShape(30),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (pressed) ColorGold else Color(0xFF3D2E1A)
+                        ),
+                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp)
+                    ) {
+                        Text(
+                            text = "Ver\nReceta",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         }
@@ -459,19 +518,6 @@ private fun PopularRecipeItem(
                 ) {
                     Text(
                         text = "⏱ ${recipe.tiempoMinutos} min",
-                        fontSize = 12.sp,
-                        color = ColorBodyText.copy(alpha = 0.7f)
-                    )
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = null,
-                        tint = ColorGold,
-                        modifier = Modifier.size(12.dp)
-                    )
-                    // Rating hardcodeado por ahora
-                    // TODO: añadir campo rating a Recipe.kt cuando tengas reviews
-                    Text(
-                        text = "4.8",
                         fontSize = 12.sp,
                         color = ColorBodyText.copy(alpha = 0.7f)
                     )

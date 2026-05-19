@@ -66,6 +66,7 @@ dependencies {
     implementation("com.google.code.gson:gson:2.11.0")
     implementation("androidx.compose.runtime:runtime-livedata")
     implementation(libs.ui)
+    implementation(libs.androidx.compose.animation)
     //implementaciones nuevas
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

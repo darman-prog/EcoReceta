@@ -2,7 +2,13 @@
 
 package eco.receta.app.features.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,6 +23,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -93,13 +100,24 @@ fun HomeScreen(
 
             // ── Título ───────────────────────────────────────────────────
             item {
-                Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
-                    Text(
-                        text = "¿Qué cocinamos hoy?",
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = ColorDarkBrown
-                    )
+                val visible = remember { mutableStateOf(false) }
+
+                LaunchedEffect(Unit) {
+                    visible.value = true
+                }
+
+                AnimatedVisibility(
+                    visible = visible.value,
+                    enter = fadeIn() + slideInVertically { it / 3 }
+                ) {
+                    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+                        Text(
+                            text = "¿Qué cocinamos hoy?",
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = ColorDarkBrown
+                        )
+                    }
                 }
             }
 
@@ -279,12 +297,19 @@ private fun HomeSearchBar(
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val focused = remember { mutableStateOf(false) }
+
+    val borderColor by animateColorAsState(
+        targetValue = if (focused.value) ColorGold else Color.Transparent,
+        label = "searchBorder"
+    )
+
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
         placeholder = {
             Text(
-                text = "Busca ingredientes o recetas...",
+                text = "Buscar recetas o ingredientes",
                 color = Color(0xFF9E8E7E),
                 fontSize = 14.sp
             )
@@ -298,12 +323,14 @@ private fun HomeSearchBar(
         },
         singleLine = true,
         shape = RoundedCornerShape(50),
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .onFocusChanged { focused.value = it.isFocused },
         colors = OutlinedTextFieldDefaults.colors(
             unfocusedContainerColor = ColorFieldBg,
             focusedContainerColor   = ColorFieldBg,
             unfocusedBorderColor    = Color.Transparent,
-            focusedBorderColor      = ColorGold
+            focusedBorderColor      = borderColor
         )
     )
 }
@@ -342,107 +369,124 @@ private fun FeaturedRecipeCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        onClick   = onClick,
-        modifier  = modifier
-            .fillMaxWidth()
-            .height(220.dp),
-        shape     = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
 
-            // ── Imagen con Coil — muestra shimmer mientras carga ─────────
-            SubcomposeAsyncImage(
-                model            = recipe.imageUrl,
-                contentDescription = recipe.nombre,
-                contentScale     = ContentScale.Crop,
-                modifier         = Modifier.fillMaxSize()
-            ) {
-                when (painter.state) {
-                    is AsyncImagePainter.State.Loading -> {
-                        // Shimmer mientras carga la imagen
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color(0xFFD6C5B5))
-                        )
+    val visible = remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        visible.value = true
+    }
+
+    AnimatedVisibility(
+        visible = visible.value,
+        enter = fadeIn() + slideInVertically { it / 2 }
+    ){
+        Card(
+            onClick   = onClick,
+            modifier  = modifier
+                .fillMaxWidth()
+                .height(220.dp),
+            shape     = RoundedCornerShape(20.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ){
+            Box(modifier = Modifier.fillMaxSize()) {
+
+                // ── Imagen con Coil — muestra shimmer mientras carga ─────────
+                SubcomposeAsyncImage(
+                    model            = recipe.imageUrl,
+                    contentDescription = recipe.nombre,
+                    contentScale     = ContentScale.Crop,
+                    modifier         = Modifier.fillMaxSize()
+                ) {
+                    when (painter.state) {
+                        is AsyncImagePainter.State.Loading -> {
+                            // Shimmer mientras carga la imagen
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color(0xFFD6C5B5))
+                            )
+                        }
+                        is AsyncImagePainter.State.Error -> {
+                            // Placeholder si falla la carga
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color(0xFF3D2010))
+                            )
+                        }
+                        else -> SubcomposeAsyncImageContent()
                     }
-                    is AsyncImagePainter.State.Error -> {
-                        // Placeholder si falla la carga
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color(0xFF3D2010))
-                        )
-                    }
-                    else -> SubcomposeAsyncImageContent()
                 }
-            }
 
-            // ── Gradiente para legibilidad del texto ─────────────────────
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color(0xCC000000)),
-                            startY = 80f
+                // ── Gradiente para legibilidad del texto ─────────────────────
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    Color(0xAA2C1A0E),
+                                    Color(0xFF2C1A0E)
+                                ),
+                                startY = 120f
+                            )
                         )
-                    )
-            )
-
-            // ── Badge precio ─────────────────────────────────────────────
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(12.dp),
-                shape    = RoundedCornerShape(50),
-                color    = ColorRed
-            ) {
-                Text(
-                    text     = "$${"%,.0f".format(recipe.costoTotal).replace(",", ".")}",
-                    color    = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                 )
-            }
 
-            // ── Texto inferior ───────────────────────────────────────────
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(16.dp)
-            ) {
-                Text(
-                    text     = recipe.nombre,
-                    color    = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                // ── Badge precio ─────────────────────────────────────────────
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(12.dp),
+                    shape    = RoundedCornerShape(50),
+                    color    = ColorRed
                 ) {
                     Text(
-                        text  = "⏱ ${recipe.tiempoMinutos} min",
-                        color = Color.White.copy(alpha = 0.9f),
-                        fontSize = 13.sp
+                        text     = "$${"%,.0f".format(recipe.costoTotal).replace(",", ".")}",
+                        color    = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                     )
-                    Text("•", color = Color.White.copy(alpha = 0.6f), fontSize = 13.sp)
+                }
+
+                // ── Texto inferior ───────────────────────────────────────────
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(16.dp)
+                ) {
                     Text(
-                        text  = "🍴 ${recipe.nivel}",
-                        color = Color.White.copy(alpha = 0.9f),
-                        fontSize = 13.sp
+                        text     = recipe.nombre,
+                        color    = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text  = "⏱ ${recipe.tiempoMinutos} min",
+                            color = Color.White.copy(alpha = 0.9f),
+                            fontSize = 13.sp
+                        )
+                        Text("•", color = Color.White.copy(alpha = 0.6f), fontSize = 13.sp)
+                        Text(
+                            text  = "🍴 ${recipe.nivel}",
+                            color = Color.White.copy(alpha = 0.9f),
+                            fontSize = 13.sp
+                        )
+                    }
                 }
             }
         }
     }
+
 }
 
 // ─── Tarjeta pequeña de lista con Coil ───────────────────────────────────────
@@ -516,20 +560,25 @@ private fun LocalRecipeItem(
             }
 
             // ── Botón + ──────────────────────────────────────────────────
+
+            val interactionSource = remember { MutableInteractionSource() }
+            val pressed by interactionSource.collectIsPressedAsState()
+
             Box(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(Color.White),
+                    .background(if (pressed) ColorGold else Color.White),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = "Agregar",
-                    tint = ColorGold,
+                    tint = if (pressed) Color.White else ColorGold,
                     modifier = Modifier.size(20.dp)
                 )
             }
+
         }
     }
 }

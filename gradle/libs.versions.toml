@@ -12,6 +12,7 @@ navigationCompose = "2.9.8"
 ui = "1.11.0"
 firebaseFirestore = "26.3.0"
 uiVersion = "1.11.1"
+animation = "1.11.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -33,6 +34,7 @@ firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
 androidx-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore", version.ref = "firebaseFirestore" }
 ui = { group = "androidx.compose.ui", name = "ui", version.ref = "uiVersion" }
+androidx-compose-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "animation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
