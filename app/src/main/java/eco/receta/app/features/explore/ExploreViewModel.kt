@@ -4,20 +4,24 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import eco.receta.app.data.model.Recipe
 import eco.receta.app.data.repository.RecipeRepository
-import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 sealed class ExploreState {
-    object Loading                          : ExploreState()
+    object Loading : ExploreState()
     data class Success(val recipes: List<Recipe>) : ExploreState()
-    data class Error(val message: String)   : ExploreState()
+    data class Error(val message: String) : ExploreState()
 }
 
+// ✅ 1. CORRECCIÓN: Agregamos las dos variables que la UI espera encontrar
 data class ExploreUiState(
-    val destacada: ExploreState       = ExploreState.Loading,
-    val populares: ExploreState       = ExploreState.Loading,
-    val searchQuery: String           = "",
-    val categoriaActiva: String       = "Todas"
+    val recetasSistema: ExploreState = ExploreState.Loading,
+    val recetasComunidad: ExploreState = ExploreState.Loading,
+    val searchQuery: String = "",
+    val categoriaActiva: String = "Todas"
 )
 
 class ExploreViewModel(
@@ -27,46 +31,43 @@ class ExploreViewModel(
     private val _uiState = MutableStateFlow(ExploreUiState())
     val uiState: StateFlow<ExploreUiState> = _uiState.asStateFlow()
 
-    // Lista completa sin filtrar
-    private var todasLasRecetas: List<Recipe> = emptyList()
+    // Guardamos las listas originales para poder filtrarlas luego
+    private var todasSistema: List<Recipe> = emptyList()
+    private var todasComunidad: List<Recipe> = emptyList()
 
-    val categorias = listOf("Todas", "ACOMPAÑAMIENTOS", "SOPAS", "BEBIDAS FRÍAS","ALMUERZOS")
+    val categorias = listOf("Todas", "ACOMPAÑAMIENTOS", "SOPAS", "BEBIDAS FRÍAS", "ALMUERZOS")
 
     init { cargarRecetas() }
 
     private fun cargarRecetas() {
         viewModelScope.launch {
-            // Carga recetas públicas de comunidad + sistema
-            combine(
-                repository.getRecetasSistema(),
-                repository.getRecetasComunidad()
-            ) { sistema, comunidad ->
-                sistema + comunidad
-            }
-                .catch { e ->
-                    _uiState.update {
-                        it.copy(
-                            destacada = ExploreState.Error(e.message ?: "Error al cargar"),
-                            populares = ExploreState.Error(e.message ?: "Error al cargar")
-                        )
-                    }
-                }
-                .collect { recetas ->
-                    todasLasRecetas = recetas
-                    actualizarEstado(recetas)
-                }
-        }
-    }
+            _uiState.update { it.copy(
+                recetasSistema = ExploreState.Loading,
+                recetasComunidad = ExploreState.Loading
+            ) }
 
-    private fun actualizarEstado(recetas: List<Recipe>) {
-        _uiState.update {
-            it.copy(
-                // Primera receta → tarjeta destacada grande
-                destacada = if (recetas.isEmpty()) ExploreState.Success(emptyList())
-                else ExploreState.Success(listOf(recetas.first())),
-                // El resto → lista "Populares"
-                populares = ExploreState.Success(recetas.drop(1))
-            )
+            try {
+                // Obtenemos ambas colecciones por separado
+                val sistema = repository.getRecetasSistema()
+                val comunidad = repository.getRecetasComunidad()
+
+                todasSistema = sistema
+                todasComunidad = comunidad
+
+                // ✅ 2. CORRECCIÓN: Actualizamos ambos estados por separado
+                _uiState.update {
+                    it.copy(
+                        recetasSistema = ExploreState.Success(sistema),
+                        recetasComunidad = ExploreState.Success(comunidad)
+                    )
+                }
+
+            } catch (e: Exception) {
+                val errorState = ExploreState.Error(e.message ?: "Error al cargar")
+                _uiState.update {
+                    it.copy(recetasSistema = errorState, recetasComunidad = errorState)
+                }
+            }
         }
     }
 
@@ -81,24 +82,34 @@ class ExploreViewModel(
     }
 
     private fun aplicarFiltros(query: String, categoria: String) {
-        var filtradas = todasLasRecetas
+        // Filtramos ambas listas
+        val filtradasSistema = filtrarLista(todasSistema, query, categoria)
+        val filtradasComunidad = filtrarLista(todasComunidad, query, categoria)
 
-        // Filtro por categoría
+        _uiState.update {
+            it.copy(
+                recetasSistema = ExploreState.Success(filtradasSistema),
+                recetasComunidad = ExploreState.Success(filtradasComunidad)
+            )
+        }
+    }
+
+    // Función auxiliar para no repetir la lógica de filtro
+    private fun filtrarLista(lista: List<Recipe>, query: String, categoria: String): List<Recipe> {
+        var filtradas = lista
+
         if (categoria != "Todas") {
             filtradas = filtradas.filter {
                 it.categoria.equals(categoria, ignoreCase = true)
             }
         }
 
-        // Filtro por búsqueda
         if (query.isNotBlank()) {
             filtradas = filtradas.filter {
                 it.nombre.contains(query, ignoreCase = true) ||
-                        it.categoria.contains(query, ignoreCase = true) ||
-                        it.region.contains(query, ignoreCase = true)
+                        it.categoria.contains(query, ignoreCase = true)
             }
         }
-
-        actualizarEstado(filtradas)
+        return filtradas
     }
 }

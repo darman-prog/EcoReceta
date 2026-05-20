@@ -192,7 +192,7 @@ fun HomeScreen(
                 SectionHeader(title = "Mi Recetario", onVerTodo = onNavigateToProfile)
             }
 
-            when (val privadasState = state.recetasPrivadas) {
+            when (val privadasState = state.misRecetas) {
                 is RecipesState.Loading -> item { LoadingContent() }
                 is RecipesState.Error   -> item { ErrorContent(message = privadasState.message) }
                 is RecipesState.Success -> {

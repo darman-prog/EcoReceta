@@ -189,12 +189,6 @@ fun LoginContent(
                 errorMessage = state.passwordError
             )
 
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                TextButton(onClick = { }) {
-                    Text("¿Olvidaste tu contraseña?", color = ColorGold, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-
             Spacer(modifier = Modifier.height(8.dp))
 
             state.authError?.let { error ->

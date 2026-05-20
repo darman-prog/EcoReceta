@@ -1,132 +1,144 @@
 package eco.receta.app.data.repository
 
 import android.net.Uri
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
 import com.google.firebase.storage.FirebaseStorage
 import eco.receta.app.data.model.Recipe
-import eco.receta.app.data.model.TipoOrigen
-import eco.receta.app.data.model.Visibilidad
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 class RecipeRepository {
 
-    private val db   = FirebaseFirestore.getInstance()
+    private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
     // ═══════════════════════════════════════════════════════════
-    // INSTANCIA DE UserRepository (NUEVO)
+    // GUARDAR RECETA NUEVA CON IMAGEN
     // ═══════════════════════════════════════════════════════════
-    private val userRepository = UserRepository()
+    suspend fun crearRecetaConImagen(recipe: Recipe, imageUri: Uri): String {
+        val recipeRef = db.collection("recetas_publicas").document()
+        val recipeId = recipeRef.id
 
-    // ── Rutas de Firestore ────────────────────────────────────────────────
-    private val colPublicas  = db.collection("recetas_publicas")
-    private fun colPrivadas(uid: String) =
-        db.collection("usuarios").document(uid)
-            .collection("recetas_privadas")
+        // Subir imagen
+        val imageUrl = uploadRecipeImage(recipeId, imageUri)
 
-    // ─────────────────────────────────────────────────────────────────────
-    // CONSULTA A — Recetas del SISTEMA (bienvenida en Home)
-    // Fuente: recetas_publicas donde tipoOrigen == "SISTEMA"
-    // ─────────────────────────────────────────────────────────────────────
-    fun getRecetasSistema(): Flow<List<Recipe>> = callbackFlow {
-        val listener = colPublicas
-            .whereEqualTo("tipoOrigen", "SISTEMA")
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) { close(error); return@addSnapshotListener }
-                val recetas = snapshot?.documents
-                    ?.mapNotNull { it.toObject<Recipe>()?.copy(id = it.id) }
-                    ?: emptyList()
-                trySend(recetas)
-            }
-        awaitClose { listener.remove() }
+        // Guardar receta con URL de imagen
+        val recipeConImagen = recipe.copy(
+            id = recipeId,
+            imageUrl = imageUrl
+        )
+        recipeRef.set(recipeConImagen).await()
+
+        // Si es privada, también guardar en recetas_privadas del usuario
+        if (recipe.visibilidad.name == "PRIVADA") {
+            val uid = auth.currentUser?.uid ?: return recipeId
+            db.collection("usuarios")
+                .document(uid)
+                .collection("recetas_privadas")
+                .document(recipeId)
+                .set(recipeConImagen)
+                .await()
+        }
+
+        return recipeId
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // CONSULTA B — Recetas privadas del usuario actual
-    // Fuente: /usuarios/{UID}/recetas_privadas/
-    // ─────────────────────────────────────────────────────────────────────
-    fun getRecetasPrivadas(): Flow<List<Recipe>> = callbackFlow {
-        val uid = auth.currentUser?.uid
-        if (uid == null) { trySend(emptyList()); close(); return@callbackFlow }
+    // ═══════════════════════════════════════════════════════════
+    // OBTENER RECETAS DEL SISTEMA (autorID = "admin") - Para Home destacadas
+    // ═══════════════════════════════════════════════════════════
+    suspend fun getRecetasSistema(): List<Recipe> {
+        return try {
+            val snapshot = db.collection("recetas_publicas")
+                .whereEqualTo("autorID", "admin")
+                .get()
+                .await()
 
-        val listener = colPrivadas(uid)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) { close(error); return@addSnapshotListener }
-                val recetas = snapshot?.documents
-                    ?.mapNotNull { it.toObject<Recipe>()?.copy(id = it.id) }
-                    ?: emptyList()
-                trySend(recetas)
+            snapshot.documents.mapNotNull {
+                it.toObject<Recipe>()?.copy(id = it.id)
             }
-        awaitClose { listener.remove() }
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // CONSULTA C — Recetas de comunidad (para Explorar)
-    // Fuente: recetas_publicas donde tipoOrigen == "USUARIO"
-    // ─────────────────────────────────────────────────────────────────────
-    fun getRecetasComunidad(): Flow<List<Recipe>> = callbackFlow {
-        val listener = colPublicas
-            .whereEqualTo("tipoOrigen", "USUARIO")
-            .whereEqualTo("visibilidad", "publica")
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) { close(error); return@addSnapshotListener }
-                val recetas = snapshot?.documents
-                    ?.mapNotNull { it.toObject<Recipe>()?.copy(id = it.id) }
-                    ?: emptyList()
-                trySend(recetas)
+    // ═══════════════════════════════════════════════════════════
+    // OBTENER RECETAS PÚBLICAS DE USUARIOS (no admin) - Para Explore
+    // ═══════════════════════════════════════════════════════════
+    suspend fun getRecetasComunidad(): List<Recipe> {
+        return try {
+            val snapshot = db.collection("recetas_publicas")
+                .whereEqualTo("visibilidad", "publica")
+                .get()
+                .await()
+
+            snapshot.documents.mapNotNull {
+                it.toObject<Recipe>()?.copy(id = it.id)
             }
-        awaitClose { listener.remove() }
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // GUARDAR receta — decide la colección según visibilidad
-    // ─────────────────────────────────────────────────────────────────────
-    suspend fun crearRecetaConImagen(
-        recipe: Recipe,
-        imageUri: Uri
-    ) {
-        val firestore = FirebaseFirestore.getInstance()
-        val docRef = firestore.collection("recetas_publicas").document()
-        val recipeId = docRef.id
+    // ═══════════════════════════════════════════════════════════
+    // OBTENER RECETAS PRIVADAS DEL USUARIO ACTUAL
+    // ═══════════════════════════════════════════════════════════
+    suspend fun getRecetasPrivadas(): List<Recipe> {
+        val uid = auth.currentUser?.uid ?: return emptyList()
+        return try {
+            val snapshot = db.collection("usuarios")
+                .document(uid)
+                .collection("recetas_privadas")
+                .get()
+                .await()
 
-        val recipeWithId = recipe.copy(id = recipeId)
+            Log.d("RecipeRepository", "Recetas privadas: ${snapshot.size()}")
 
+            snapshot.documents.mapNotNull {
+                it.toObject<Recipe>()?.copy(id = it.id)
+            }
+        } catch (e: Exception) {
+            Log.e("RecipeRepository", "Error getRecetasPrivadas: ${e.message}")
+            emptyList()
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // OBTENER RECETAS POR USUARIO (para contar y recalcular badge)
+    // ═══════════════════════════════════════════════════════════
+    suspend fun getRecetasPorUsuario(userId: String): List<Recipe> {
+        return try {
+            val privadas = db.collection("usuarios")
+                .document(userId)
+                .collection("recetas_privadas")
+                .get()
+                .await()
+                .documents.mapNotNull { it.toObject<Recipe>()?.copy(id = it.id) }
+
+            val publicas = db.collection("recetas_publicas")
+                .whereEqualTo("autorID", userId)
+                .get()
+                .await()
+                .documents.mapNotNull { it.toObject<Recipe>()?.copy(id = it.id) }
+
+            privadas + publicas
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // FUNCIONES DE IMAGEN
+    // ═══════════════════════════════════════════════════════════
+    suspend fun uploadRecipeImage(recipeId: String, imageUri: Uri): String {
         val storageRef = FirebaseStorage.getInstance()
             .reference
-            .child("recetas_publicas/$recipeId/cover.jpg")
-
-        var imageUploaded = false
-
-        try {
-            // 1️⃣ Guardar receta base
-            docRef.set(recipeWithId).await()
-
-            // 2️⃣ Subir imagen
-            storageRef.putFile(imageUri).await()
-            imageUploaded = true
-
-            val url = storageRef.downloadUrl.await().toString()
-
-            // 3️⃣ Guardar URL
-            docRef.update("imageUrl", url).await()
-
-        } catch (e: Exception) {
-
-            // ✅ Solo borrar si realmente se subió
-            if (imageUploaded) {
-                runCatching { storageRef.delete().await() }
-            }
-
-            // ✅ Firestore siempre se limpia
-            runCatching { docRef.delete().await() }
-
-            throw e
-        }
+            .child("recetas_publicas")
+            .child(recipeId)
+            .child("cover.jpg")
+        storageRef.putFile(imageUri).await()
+        return storageRef.downloadUrl.await().toString()
     }
 
 

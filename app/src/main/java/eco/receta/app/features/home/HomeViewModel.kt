@@ -1,15 +1,13 @@
-// eco/receta/app/features/home/HomeViewModel.kt
-
 package eco.receta.app.features.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import eco.receta.app.data.model.Recipe
 import eco.receta.app.data.repository.RecipeRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-// ── Patrón Loading / Success / Error ────────────────────────────────────────
 sealed class RecipesState {
     object Loading : RecipesState()
     data class Success(val recipes: List<Recipe>) : RecipesState()
@@ -17,9 +15,8 @@ sealed class RecipesState {
 }
 
 data class HomeUiState(
-    val recetasSistema: RecipesState = RecipesState.Loading,
-    val recetasComunidad: RecipesState = RecipesState.Loading,
-    val recetasPrivadas: RecipesState = RecipesState.Loading,
+    val recetasSistema: RecipesState = RecipesState.Loading,   // Admin
+    val misRecetas: RecipesState = RecipesState.Loading,       // Privadas + públicas del usuario
     val searchQuery: String = ""
 )
 
@@ -30,73 +27,93 @@ class HomeViewModel(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    // Lista completa sin filtrar (para que la búsqueda funcione sobre todos)
-    private var todasLasRecetas: List<Recipe> = emptyList()
+    private var recetasSistemaCache: List<Recipe> = emptyList()
+    private var misRecetasCache: List<Recipe> = emptyList()
 
     init {
         cargarRecetasSistema()
-        cargarRecetasPrivadas()
+        cargarMisRecetas()
     }
 
-    // ── Consulta A: recetas oficiales del sistema ────────────────────────
+    // ═══════════════════════════════════════════════════════════
+    // RECETAS DEL SISTEMA (admin)
+    // ═══════════════════════════════════════════════════════════
     private fun cargarRecetasSistema() {
         viewModelScope.launch {
-            repository.getRecetasSistema()
-                .catch { e ->
-                    _uiState.update {
-                        it.copy(recetasSistema = RecipesState.Error(
-                            e.message ?: "Error al cargar recetas"
-                        ))
-                    }
+            _uiState.update { it.copy(recetasSistema = RecipesState.Loading) }
+
+            try {
+                val recetas = repository.getRecetasSistema()
+                recetasSistemaCache = recetas
+
+                _uiState.update {
+                    it.copy(recetasSistema = RecipesState.Success(recetas))
                 }
-                .collect { recetas ->
-                    todasLasRecetas = recetas
-                    _uiState.update {
-                        it.copy(recetasSistema = RecipesState.Success(recetas))
-                    }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(recetasSistema = RecipesState.Error(
+                        e.message ?: "Error al cargar recetas"
+                    ))
                 }
+            }
         }
     }
 
-    // ── Consulta B: recetas privadas del usuario actual ──────────────────
-    private fun cargarRecetasPrivadas() {
+    // ═══════════════════════════════════════════════════════════
+    // MIS RECETAS (privadas + públicas del usuario)
+    // ═══════════════════════════════════════════════════════════
+    private fun cargarMisRecetas() {
         viewModelScope.launch {
-            repository.getRecetasPrivadas()
-                .catch { e ->
-                    _uiState.update {
-                        it.copy(recetasPrivadas = RecipesState.Error(
-                            e.message ?: "Error al cargar tu recetario"
-                        ))
-                    }
+            _uiState.update { it.copy(misRecetas = RecipesState.Loading) }
+
+            try {
+                val uid = FirebaseAuth.getInstance().currentUser?.uid
+                    ?: throw Exception("No autenticado")
+
+                val recetas = repository.getRecetasPorUsuario(uid)
+                misRecetasCache = recetas
+
+                _uiState.update {
+                    it.copy(misRecetas = RecipesState.Success(recetas))
                 }
-                .collect { recetas ->
-                    _uiState.update {
-                        it.copy(recetasPrivadas = RecipesState.Success(recetas))
-                    }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(misRecetas = RecipesState.Error(
+                        e.message ?: "Error al cargar tu recetario"
+                    ))
                 }
+            }
         }
     }
 
-    // ── Búsqueda en tiempo real ──────────────────────────────────────────
     fun onSearchQueryChange(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
 
         if (query.isBlank()) {
-            // Sin búsqueda: muestra todo
             _uiState.update {
-                it.copy(recetasSistema = RecipesState.Success(todasLasRecetas))
+                it.copy(
+                    recetasSistema = RecipesState.Success(recetasSistemaCache),
+                    misRecetas = RecipesState.Success(misRecetasCache)
+                )
             }
             return
         }
 
-        // Filtra por nombre o categoría (insensible a mayúsculas)
-        val filtradas = todasLasRecetas.filter { receta ->
+        val filtradasSistema = recetasSistemaCache.filter { receta ->
+            receta.nombre.contains(query, ignoreCase = true) ||
+                    receta.categoria.contains(query, ignoreCase = true)
+        }
+
+        val filtradasMias = misRecetasCache.filter { receta ->
             receta.nombre.contains(query, ignoreCase = true) ||
                     receta.categoria.contains(query, ignoreCase = true)
         }
 
         _uiState.update {
-            it.copy(recetasSistema = RecipesState.Success(filtradas))
+            it.copy(
+                recetasSistema = RecipesState.Success(filtradasSistema),
+                misRecetas = RecipesState.Success(filtradasMias)
+            )
         }
     }
 }

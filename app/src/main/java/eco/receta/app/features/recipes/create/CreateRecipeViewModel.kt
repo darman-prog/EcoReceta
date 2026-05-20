@@ -13,25 +13,24 @@ import eco.receta.app.data.model.Recipe
 import eco.receta.app.data.model.TipoOrigen
 import eco.receta.app.data.model.Visibilidad
 import eco.receta.app.data.repository.RecipeRepository
+import eco.receta.app.data.repository.UserRepository
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-
 
 data class CreateUiState(
     val nombre: String = "",
     val descripcion: String = "",
     val imagenUri: Uri? = null,
     val ingredientesSeleccionados: List<IngredienteSeleccionado> = emptyList(),
-    val visibilidad: Visibilidad = Visibilidad.PRIVADA,  // ← Usa el de data.model
+    val visibilidad: Visibilidad = Visibilidad.PRIVADA,
     val tiempoMinutos: String = "",
     val porciones: Int = 1,
     val nivel: String = "Fácil",
-    val categoria: String = "ALMUERZOS",  // ← NUEVO con valor por defecto
+    val categoria: String = "ALMUERZOS",
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
     val error: String? = null
 )
-
 
 data class IngredienteSeleccionado(
     val productoId: String,
@@ -44,6 +43,8 @@ data class IngredienteSeleccionado(
 class CreateRecipeViewModel : ViewModel() {
 
     private val recipeRepository = RecipeRepository()
+    private val userRepository = UserRepository()
+    private val auth = FirebaseAuth.getInstance()
 
     var uiState by mutableStateOf(CreateUiState())
         private set
@@ -53,10 +54,6 @@ class CreateRecipeViewModel : ViewModel() {
     fun onImagenSelected(uri: Uri) { uiState = uiState.copy(imagenUri = uri) }
     fun onTiempoChange(value: String) { uiState = uiState.copy(tiempoMinutos = value) }
     fun onNivelChange(value: String) { uiState = uiState.copy(nivel = value) }
-
-    // ═══════════════════════════════════════════════════════════
-    // AHORA USA Visibilidad de data.model (eco.receta.app.data.model.Visibilidad)
-    // ═══════════════════════════════════════════════════════════
     fun onVisibilidadChange(visibilidad: Visibilidad) {
         uiState = uiState.copy(visibilidad = visibilidad)
     }
@@ -72,18 +69,14 @@ class CreateRecipeViewModel : ViewModel() {
     }
 
     fun onCategoriaChange(value: String) { uiState = uiState.copy(categoria = value) }
+
     fun addIngrediente(ingrediente: IngredienteSeleccionado) {
         val existe = uiState.ingredientesSeleccionados.any { it.productoId == ingrediente.productoId }
-
-        Log.d("FLUJO", "10. addIngrediente llamado: ${ingrediente.nombre}")
-        Log.d("FLUJO", "10. Ya existe: $existe")
-        Log.d("FLUJO", "10. Lista actual: ${uiState.ingredientesSeleccionados.map { it.nombre }}")
 
         if (!existe) {
             uiState = uiState.copy(
                 ingredientesSeleccionados = uiState.ingredientesSeleccionados + ingrediente
             )
-            Log.d("FLUJO", "11. NUEVA lista: ${uiState.ingredientesSeleccionados.map { it.nombre }}")
         }
     }
 
@@ -93,8 +86,6 @@ class CreateRecipeViewModel : ViewModel() {
                 .filter { it.productoId != productoId }
         )
     }
-
-
 
     private suspend fun getAutorNombre(uid: String): String {
         val snap = FirebaseFirestore.getInstance()
@@ -108,12 +99,7 @@ class CreateRecipeViewModel : ViewModel() {
             ?: "Usuario"
     }
 
-
-
-    // features/recipes/create/CreateRecipeViewModel.kt
     fun guardarReceta() {
-
-        // Validaciones (las tuyas están bien)
         if (uiState.nombre.isBlank()) {
             uiState = uiState.copy(error = "El nombre del plato es obligatorio")
             return
@@ -134,14 +120,13 @@ class CreateRecipeViewModel : ViewModel() {
         viewModelScope.launch {
             uiState = uiState.copy(isLoading = true, error = null)
 
-            val uid = FirebaseAuth.getInstance().currentUser?.uid
+            val uid = auth.currentUser?.uid
                 ?: run {
                     uiState = uiState.copy(error = "Usuario no autenticado")
                     return@launch
                 }
 
             val autorNombre = getAutorNombre(uid)
-
 
             try {
                 recipeRepository.crearRecetaConImagen(
@@ -164,9 +149,17 @@ class CreateRecipeViewModel : ViewModel() {
                     imageUri = imagenUri
                 )
 
+                val recetasTotales = recipeRepository.getRecetasPorUsuario(uid).size
+
+                userRepository.actualizarBadge(uid, recetasTotales)
+                userRepository.actualizarContadorRecetas(uid, recetasTotales)
+
+                Log.d("CreateRecipe", "Receta guardada. Total recetas: $recetasTotales")
+
                 uiState = uiState.copy(isLoading = false, isSuccess = true)
 
             } catch (e: Exception) {
+                Log.e("CreateRecipe", "Error: ${e.message}")
                 uiState = uiState.copy(
                     isLoading = false,
                     error = e.message ?: "Error al guardar la receta"
