@@ -1,5 +1,6 @@
 package eco.receta.app.features.recipes.create
 
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.getValue
@@ -99,7 +100,7 @@ class CreateRecipeViewModel : ViewModel() {
             ?: "Usuario"
     }
 
-    fun guardarReceta() {
+    fun guardarReceta(context: Context) {
         if (uiState.nombre.isBlank()) {
             uiState = uiState.copy(error = "El nombre del plato es obligatorio")
             return
@@ -130,6 +131,8 @@ class CreateRecipeViewModel : ViewModel() {
 
             try {
                 recipeRepository.crearRecetaConImagen(
+
+                    context = context,
                     recipe = Recipe(
                         nombre = uiState.nombre,
                         descripcion = uiState.descripcion,

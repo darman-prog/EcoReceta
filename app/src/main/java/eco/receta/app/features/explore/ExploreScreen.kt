@@ -14,8 +14,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
@@ -45,7 +43,7 @@ import eco.receta.app.features.home.ColorDarkBrown
 
 // ─── Paleta EcoReceta ────────────────────────────────────────────────────────
 private val Crema         = Color(0xFFF6EFE9)
-private val MarronOscuro  = Color(0xFF2C1A0E)
+val MarronOscuro  = Color(0xFF2C1A0E)
 private val MarronMedio   = Color(0xFF5C3D2E)
 private val Dorado        = Color(0xFFC8922A)
 private val Rojo          = Color(0xFFD94F3D)

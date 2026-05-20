@@ -42,6 +42,7 @@ import coil.compose.SubcomposeAsyncImageContent
 import com.google.firebase.auth.FirebaseAuth
 import eco.receta.app.core.components.EcoBottomNavBar
 import eco.receta.app.data.model.Recipe
+import eco.receta.app.features.explore.MarronOscuro
 
 // ─── Colores del Figma ───────────────────────────────────────────────────────
 private val ColorCream     = Color(0xFFF6EFED)
@@ -409,10 +410,9 @@ private fun FeaturedRecipeCard(
                         is AsyncImagePainter.State.Error -> {
                             // Placeholder si falla la carga
                             Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(Color(0xFF3D2010))
-                            )
+                                Modifier.fillMaxSize().background(MarronOscuro),
+                                contentAlignment = Alignment.Center
+                            ) { Text("🍽", fontSize = 28.sp) }
                         }
                         else -> SubcomposeAsyncImageContent()
                     }
@@ -525,9 +525,10 @@ private fun LocalRecipeItem(
                             .fillMaxSize()
                             .background(Color(0xFFD6C5B5)))
                     is AsyncImagePainter.State.Error ->
-                        Box(Modifier
-                            .fillMaxSize()
-                            .background(Color(0xFF8B5E3C)))
+                        Box(
+                            Modifier.fillMaxSize().background(MarronOscuro),
+                            contentAlignment = Alignment.Center
+                        ) { Text("🍽", fontSize = 28.sp) }
                     else -> SubcomposeAsyncImageContent()
                 }
             }

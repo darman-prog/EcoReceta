@@ -772,10 +772,12 @@ fun CreateRecipeScreen(
                 label = "botonColor"
             )
 
+            val context = LocalContext.current
+
             Button(
                 onClick = {
                     botonPresionado = true
-                    viewModel.guardarReceta()
+                    viewModel.guardarReceta(context)
                 },
                 enabled = puedeGuardar,
                 modifier = Modifier

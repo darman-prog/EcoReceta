@@ -8,10 +8,6 @@ data class Ingredient(
     val marca: String = "",
     val categoria: String = "",
     val unidad: String = "",
-
-    // ═══════════════════════════════════════════════════════════
-    // NOMBRES EXACTOS DE FIRESTORE (no camelCase)
-    // ═══════════════════════════════════════════════════════════
     val imagen: String = "",              // ← Firestore dice "imagen"
     val esComestible: Boolean = false,    // ← Firestore dice "esComestible"
     val tamaño: Int = 0,                // ← Firestore dice "tamaño" (con ñ)

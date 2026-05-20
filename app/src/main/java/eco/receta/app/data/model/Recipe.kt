@@ -25,7 +25,7 @@ data class Recipe(
     val esOficial: Boolean = false,
     val ingredientes_ids: List<String> = emptyList(),
     val creadoEn: Long = 0L,
-    val imagen: String = ""        // ← ✅ AGREGAR = ""
+    val imagen: String = ""
 )
 
 enum class TipoOrigen {
