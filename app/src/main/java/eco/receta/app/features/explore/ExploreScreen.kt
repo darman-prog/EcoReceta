@@ -50,8 +50,8 @@ private val MarronMedio   = Color(0xFF5C3D2E)
 private val Dorado        = Color(0xFFC8922A)
 private val Rojo          = Color(0xFFD94F3D)
 private val TarjetaBg     = Color(0xFFFFF8F2)
-private val CampoFondo    = Color(0xFFEDE8DF)
-private val GrisTexto     = Color(0xFF8D8D8D)
+private val CampoFondo    = Color(0xFFE3E0DA)
+private val GrisTexto     = Color(0xFFB0A9A9)
 private val BlancoCálido  = Color(0xFFFFFBF7)
 
 @Composable
@@ -589,9 +589,9 @@ private fun ComunidadRecipeCard(
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(16.dp)
+                                .size(22.dp)
                                 .clip(CircleShape)
-                                .background(CampoFondo),
+                                ,
                             contentAlignment = Alignment.Center
                         ) {
                             Text("👤", fontSize = 8.sp)

@@ -345,7 +345,7 @@ fun ProfileScreen(
                     color = MarronOscuro
                 )
                 TextButton(onClick = {
-                    navController.navigate("${Routes.EXPLORE}?filter=mis_recetas")
+                    navController.navigate("${Routes.HOME}?filter=mis_recetas")
                 }) {
                     Text("Ver todas", color = Dorado, fontWeight = FontWeight.SemiBold)
                 }

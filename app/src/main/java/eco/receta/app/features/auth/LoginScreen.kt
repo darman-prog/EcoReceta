@@ -280,7 +280,6 @@ private fun SocialButton(
     icon: @Composable () -> Unit,
     onClick: () -> Unit
 ) {
-    // Cambio a estilo con color suave para mantener jerarquía visual
     Button(
         onClick = onClick,
         modifier = modifier.height(52.dp),
